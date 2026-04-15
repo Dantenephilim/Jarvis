@@ -21,7 +21,7 @@ Interface de control de voz e IA construida con React + Vite, conectada a n8n y 
 ### 1. Instalar dependencias (primera vez)
 
 ```bash
-cd C:\Users\Dante\OneDrive\Proyects\Jarvis
+cd C:\tu_location\Jarvis
 npm install
 ```
 
@@ -31,13 +31,13 @@ Edita el archivo `.env` en la raíz del proyecto:
 
 ```env
 # URL del webhook de n8n (el proxy de Vite lo redirige automáticamente)
-VITE_N8N_WEBHOOK_URL=https://nexotechx.com/webhook/1faaf855-bd93-4b57-a298-8bdd00e419da
+VITE_N8N_WEBHOOK_URL=https://nexotechx.com/webhook/production_link
 
 # API Key de ElevenLabs (text-to-speech)
 VITE_ELEVENLABS_API_KEY=tu_api_key_aqui
 
 # Voice ID de ElevenLabs (el ID de la voz que usa Jarvis)
-VITE_ELEVENLABS_VOICE_ID=DMyrgzQFny3JI1Y1paM5
+VITE_ELEVENLABS_VOICE_ID=tu_api_key_aqui
 ```
 
 > **Importante:** El archivo `.env` nunca se sube a Git (está en `.gitignore`). Si clonás el repo de cero, tenés que crearlo manualmente.
