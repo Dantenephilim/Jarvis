@@ -1,0 +1,252 @@
+.arc-reactor-container {
+    position: relative;
+    width: 800px;
+    height: 800px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    filter: drop-shadow(0 0 15px rgba(0, 119, 255, 0.2));
+}
+
+.ring-layer {
+    position: absolute;
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    box-sizing: border-box;
+}
+
+/* 1. Core Text and Solid Center */
+.reactor-center {
+    z-index: 50;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 140px;
+    height: 140px;
+    background: transparent;
+    border-radius: 50%;
+    border: 2px solid rgba(0,243,255,0.3);
+    animation: core-pulse 4s ease-in-out infinite;
+}
+
+.giant-number {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 4rem;
+    color: #fff;
+    text-shadow: 0 0 10px rgba(0,119,255,0.5);
+    z-index: 51;
+}
+
+.core-inner-dark {
+    position: absolute;
+    width: 130px;
+    height: 130px;
+    background: transparent;
+    border: 1px dashed rgba(255,255,255,0.2);
+    border-radius: 50%;
+    z-index: 49;
+    animation: spin-offset 20s linear infinite;
+}
+
+/* 2. Complex Inner Rings */
+.ring-1-dashed {
+    width: 220px;
+    height: 220px;
+    border: 4px dashed var(--primary-glow);
+    opacity: 0.9;
+    animation: spin 30s linear infinite;
+}
+
+.ring-2-segments {
+    width: 280px;
+    height: 280px;
+    background: conic-gradient(from 0deg,
+            var(--primary-glow) 0deg, var(--primary-glow) 40deg,
+            transparent 45deg, transparent 80deg,
+            var(--primary-glow) 85deg, var(--primary-glow) 150deg,
+            transparent 155deg, transparent 200deg,
+            var(--primary-glow) 205deg, var(--primary-glow) 300deg,
+            transparent 305deg, transparent 355deg);
+    mask: radial-gradient(transparent 68%, black 69%);
+    -webkit-mask: radial-gradient(transparent 68%, black 69%);
+    animation: spin 15s linear infinite reverse;
+}
+
+/* 3. Orange Alert Ring */
+.ring-3-orange {
+    width: 320px;
+    height: 320px;
+    border: 6px solid transparent;
+    border-top-color: var(--alert-color);
+    border-left-color: var(--alert-color);
+    border-radius: 50%;
+    transform: translate(-50%, -50%) rotate(45deg);
+    animation: spin-offset 8s ease-in-out infinite alternate;
+}
+
+.ring-4-dotted {
+    width: 400px;
+    height: 400px;
+    border: 2px dashed rgba(255,255,255,0.2);
+    animation: spin 45s linear infinite;
+}
+
+/* 4. Massive Data Blocks (Light Blue/Cyan blocks) */
+.ring-5-data-blocks {
+    width: 480px;
+    height: 480px;
+    background: conic-gradient(from 0deg,
+            var(--emerald-glow) 0deg, var(--emerald-glow) 5deg,
+            transparent 6deg, transparent 15deg,
+            var(--emerald-glow) 15deg, var(--emerald-glow) 20deg,
+            transparent 21deg, transparent 35deg,
+            var(--emerald-glow) 35deg, var(--emerald-glow) 50deg,
+            transparent 51deg, transparent 70deg,
+            var(--emerald-glow) 70deg, var(--emerald-glow) 75deg,
+            transparent 76deg, transparent 180deg,
+            var(--primary-glow) 180deg, var(--primary-glow) 190deg,
+            transparent 191deg, transparent 250deg,
+            var(--emerald-glow) 250deg, var(--emerald-glow) 280deg,
+            transparent 281deg, transparent 360deg);
+    mask: radial-gradient(transparent 66%, black 67%);
+    -webkit-mask: radial-gradient(transparent 66%, black 67%);
+    animation: spin 25s linear infinite reverse;
+}
+
+/* 5. Thin calibration lines */
+.ring-6-calibration {
+    width: 580px;
+    height: 580px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.calibration-marks {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    background: conic-gradient(from 0deg,
+            rgba(255,255,255,0.4) 0deg, rgba(255,255,255,0.4) 1deg,
+            transparent 1deg, transparent 45deg,
+            rgba(255,255,255,0.4) 45deg, rgba(255,255,255,0.4) 46deg,
+            transparent 46deg, transparent 90deg,
+            rgba(255,255,255,0.4) 90deg, rgba(255,255,255,0.4) 91deg,
+            transparent 91deg, transparent 135deg,
+            rgba(255,255,255,0.4) 135deg, rgba(255,255,255,0.4) 136deg,
+            transparent 136deg, transparent 180deg,
+            rgba(255,255,255,0.4) 180deg, rgba(255,255,255,0.4) 181deg,
+            transparent 181deg, transparent 225deg,
+            rgba(255,255,255,0.4) 225deg, rgba(255,255,255,0.4) 226deg,
+            transparent 226deg, transparent 270deg,
+            rgba(255,255,255,0.4) 270deg, rgba(255,255,255,0.4) 271deg,
+            transparent 271deg, transparent 315deg,
+            rgba(255,255,255,0.4) 315deg, rgba(255,255,255,0.4) 316deg,
+            transparent 316deg, transparent 360deg);
+    mask: radial-gradient(transparent 68%, black 69%);
+    -webkit-mask: radial-gradient(transparent 68%, black 69%);
+}
+
+.ring-7-outer-blocks {
+    width: 660px;
+    height: 660px;
+    border: 1px dashed rgba(0, 119, 255, 0.4);
+    animation: spin 50s linear infinite;
+}
+
+.ring-8-outermost {
+    width: 720px;
+    height: 720px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.deco-label {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform-origin: center;
+    color: #fff;
+    font-size: 0.6rem;
+    font-family: var(--font-main);
+    letter-spacing: 2px;
+    opacity: 0.7;
+    background: var(--bg-color);
+    padding: 2px 5px;
+    border: 1px solid rgba(255,255,255,0.2);
+    margin-left:-25px; /* centering hack based on word len */
+}
+
+/* Huge faint boundary */
+.ring-9-gigantic {
+    width: 900px;
+    height: 900px;
+    border: 1px solid rgba(255,255,255,0.03);
+}
+
+.scanner-radar {
+    width: 600px;
+    height: 600px;
+    background: conic-gradient(from 0deg, transparent 0%, var(--primary-glow) 2%, transparent 8%);
+    opacity: 0.15;
+    animation: spin 4s linear infinite;
+    mask: radial-gradient(transparent 20%, black 21%);
+    -webkit-mask: radial-gradient(transparent 20%, black 21%);
+}
+
+/* Animations */
+@keyframes spin {
+    from { transform: translate(-50%, -50%) rotate(0deg); }
+    to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes spin-offset {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(180deg); }
+}
+
+@keyframes core-pulse {
+    0% { transform: translate(-50%, -50%) scale(1); filter: brightness(1); }
+    50% { transform: translate(-50%, -50%) scale(1.02); filter: brightness(1.2); box-shadow: 0 0 30px var(--primary-glow), inset 0 0 10px rgba(0,243,255,0.3); }
+    100% { transform: translate(-50%, -50%) scale(1); filter: brightness(1); }
+}
+
+/* Listening Mode Colors (Orange/Red) */
+.arc-reactor-container.listening .giant-number {
+    color: var(--alert-color);
+    text-shadow: 0 0 10px rgba(255,85,0,0.5);
+    filter: brightness(1.5);
+}
+
+.arc-reactor-container.listening .ring-3-orange {
+    border-top-color: #ff0000;
+    border-left-color: #ff0000;
+    filter: drop-shadow(0 0 10px #ff0000);
+}
+
+.arc-reactor-container.listening .scanner-radar {
+    background: conic-gradient(from 0deg, transparent 0%, var(--alert-color) 5%, transparent 15%);
+    opacity: 0.3;
+}
+
+/* Speaking Mode Colors (Cyan Intense) */
+.arc-reactor-container.speaking .giant-number {
+    color: var(--emerald-glow);
+    text-shadow: 0 0 20px var(--emerald-glow);
+}
+
+.arc-reactor-container.speaking .ring-5-data-blocks {
+    filter: brightness(1.8) drop-shadow(0 0 15px var(--primary-glow));
+    background: conic-gradient(from 0deg,
+        var(--primary-glow) 0deg, var(--primary-glow) 20deg,
+        transparent 20deg, transparent 40deg,
+        var(--primary-glow) 40deg, var(--primary-glow) 60deg,
+        transparent 60deg, transparent 180deg,
+        var(--emerald-glow) 180deg, var(--emerald-glow) 200deg,
+        transparent 200deg, transparent 360deg);
+}
+
+.arc-reactor-container.speaking .scanner-radar {
+    background: conic-gradient(from 0deg, transparent 0%, var(--emerald-glow) 15%, transparent 30%);
+    opacity: 0.5;
+}

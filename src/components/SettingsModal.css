@@ -1,0 +1,104 @@
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    width: 500px;
+    background: rgba(10, 10, 10, 0.9);
+    border: 1px solid var(--primary-glow);
+    box-shadow: 0 0 30px rgba(0, 243, 255, 0.2);
+    padding: 30px;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--glass-border);
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+
+.modal-header h2 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    color: var(--primary-glow);
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+.close-btn:hover {
+    color: var(--alert-color);
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.input-group label {
+    font-family: var(--font-tech);
+    color: var(--primary-glow);
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+}
+
+.cyber-input {
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--glass-border);
+    color: #fff;
+    padding: 12px;
+    font-family: var(--font-tech);
+    font-size: 1rem;
+    outline: none;
+    transition: all 0.3s;
+}
+
+.cyber-input:focus {
+    border-color: var(--primary-glow);
+    box-shadow: 0 0 10px rgba(0, 243, 255, 0.3);
+}
+
+.hint {
+    color: #666;
+    font-size: 0.8rem;
+}
+
+.cyber-btn {
+    background: var(--primary-glow);
+    color: #000;
+    border: none;
+    padding: 10px 20px;
+    font-family: var(--font-tech);
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    transition: all 0.3s;
+}
+
+.cyber-btn:hover {
+    background: #fff;
+    box-shadow: 0 0 20px var(--primary-glow);
+}

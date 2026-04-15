@@ -1,0 +1,12 @@
+# Normalize line endings to LF on commit (works on both Windows and Linux/Kali)
+* text=auto eol=lf
+
+# Force these to always be LF (important for Docker/Bash scripts in Kali)
+*.sh text eol=lf
+Dockerfile text eol=lf
+docker-compose.yml text eol=lf
+nginx/nginx.conf text eol=lf
+stats-server/Dockerfile text eol=lf
+
+# Windows-only scripts can stay CRLF
+*.bat text eol=crlf

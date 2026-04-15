@@ -1,0 +1,40 @@
+services:
+  # ─────────────────────────────────────────
+  # Jarvis Frontend (Nginx serving React build)
+  # ─────────────────────────────────────────
+  jarvis-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: jarvis-app
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    environment:
+      - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx/conf.d
+    depends_on:
+      - jarvis-stats
+    networks:
+      - jarvis-net
+
+  # ─────────────────────────────────────────
+  # Stats Server (reads host CPU/RAM from /proc)
+  # ─────────────────────────────────────────
+  jarvis-stats:
+    build:
+      context: ./stats-server
+      dockerfile: Dockerfile
+    container_name: jarvis-stats
+    restart: unless-stopped
+    volumes:
+      # Mount host's /proc so we can read real system stats
+      - /proc:/host/proc:ro
+    environment:
+      - HOST_PROC=/host/proc
+      - PORT=3001
+    networks:
+      - jarvis-net
+
+networks:
+  jarvis-net:
+    driver: bridge

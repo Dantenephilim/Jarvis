@@ -1,0 +1,7 @@
+node_modules
+dist
+.env
+.git
+.gitignore
+*.log
+stats-server/node_modules

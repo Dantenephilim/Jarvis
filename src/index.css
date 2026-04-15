@@ -1,0 +1,135 @@
+:root {
+  --bg-color: #020304;
+  --primary-glow: #00f3ff;
+  --emerald-glow: #0077ff;
+  --secondary-glow: #112233;
+  --alert-color: #ff8800;
+  --text-color: #d0e0ff;
+  --glass-bg: rgba(2, 5, 10, 0.6);
+  --glass-border: rgba(0, 119, 255, 0.25);
+  --font-main: 'JetBrains Mono', 'Courier New', monospace;
+  --font-display: 'Orbitron', 'Segoe UI', sans-serif;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-family: var(--font-main);
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+  /* Charcoal space gradient */
+  background: radial-gradient(circle at center, #111822 0%, #05070a 100%);
+}
+
+#root {
+  height: 100%;
+  width: 100%;
+}
+
+.jarvis-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  position: relative;
+  /* Soft particle grid */
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)),
+    url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='20' cy='20' r='1' fill='%2300f3ff' fill-opacity='0.15'/%3E%3C/svg%3E");
+  z-index: 1;
+}
+
+/* Glass panel utility for UI elements */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(0, 243, 255, 0.05);
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.title-neon {
+  font-family: var(--font-display);
+  color: #fff;
+  text-shadow: 0 0 15px var(--primary-glow);
+  letter-spacing: 4px;
+}
+
+.text-emerald {
+  color: var(--emerald-glow);
+}
+
+.text-cyan {
+  color: var(--primary-glow);
+}
+
+/* Base Buttons */
+.cyber-btn {
+  background: rgba(0, 243, 255, 0.1);
+  border: 1px solid var(--primary-glow);
+  color: var(--primary-glow);
+  padding: 10px 20px;
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(4px);
+}
+
+.cyber-btn:hover {
+  background: var(--primary-glow);
+  color: #000;
+  box-shadow: 0 0 20px var(--primary-glow);
+}
+
+/* Inputs */
+.cyber-input {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--secondary-glow);
+  color: var(--text-color);
+  padding: 12px;
+  font-family: var(--font-main);
+  border-radius: 6px;
+  outline: none;
+  transition: all 0.3s;
+}
+
+.cyber-input:focus {
+  border-color: var(--primary-glow);
+  box-shadow: 0 0 10px rgba(0, 243, 255, 0.2);
+}
+
+/* Layout Utilities classes */
+.flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary-glow);
+  border-radius: 3px;
+}
+
+@keyframes scanline-flicker {
+  0% { opacity: 0.8; }
+  5% { opacity: 0.7; }
+  10% { opacity: 0.8; }
+  100% { opacity: 0.8; }
+}
