@@ -127,9 +127,81 @@ body {
   border-radius: 3px;
 }
 
-@keyframes scanline-flicker {
-  0% { opacity: 0.8; }
-  5% { opacity: 0.7; }
-  10% { opacity: 0.8; }
-  100% { opacity: 0.8; }
+/* --- ADVANCED HUD LAYERS --- */
+.jarvis-container::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: 
+    linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
+    linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+  background-size: 100% 4px, 3px 100%;
+  z-index: 1000;
+  pointer-events: none;
+  opacity: 0.15;
+}
+
+.jarvis-container::after {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: linear-gradient(rgba(0, 243, 255, 0.05) 0%, transparent 10%, transparent 90%, rgba(0, 243, 255, 0.05) 100%);
+  pointer-events: none;
+  z-index: 1001;
+  animation: crt-flicker 0.15s infinite;
+}
+
+/* Tactical Grid Layer */
+.tactical-grid {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background-image: 
+    linear-gradient(var(--glass-border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--glass-border) 1px, transparent 1px);
+  background-size: 50px 50px;
+  mask-image: radial-gradient(circle at center, black 30%, transparent 80%);
+  opacity: 0.08;
+  pointer-events: none;
+}
+
+/* HUD Decorative Brackets */
+.hud-corner {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border: 2px solid var(--primary-glow);
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.top-left { top: 20px; left: 20px; border-right: 0; border-bottom: 0; }
+.top-right { top: 20px; right: 20px; border-left: 0; border-bottom: 0; }
+.bottom-left { bottom: 20px; left: 20px; border-right: 0; border-top: 0; }
+.bottom-right { bottom: 20px; right: 20px; border-left: 0; border-top: 0; }
+
+@keyframes crt-flicker {
+  0% { opacity: 0.1; }
+  50% { opacity: 0.12; }
+  100% { opacity: 0.1; }
+}
+
+/* Inputs & Buttons Polish */
+.cyber-btn:active {
+  transform: scale(0.95);
+  box-shadow: 0 0 30px var(--primary-glow);
+}
+
+.cyber-input::placeholder {
+  color: rgba(0, 243, 255, 0.3);
+  letter-spacing: 3px;
+}
+
+/* Responsive Scaling */
+@media (max-width: 1200px) {
+  :root { font-size: 14px; }
+}
+
+@media (max-width: 768px) {
+  .hud-corner { display: none; }
+  .tactical-grid { background-size: 30px 30px; }
 }

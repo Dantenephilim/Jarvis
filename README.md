@@ -50,6 +50,17 @@ npm run dev
 
 Jarvis queda disponible en: **http://localhost:5173**
 
+### 4. Lanzador rápido (Windows)
+
+Si estás en Windows, puedes simplemente hacer doble clic en el archivo:
+`start-jarvis.bat`
+
+Este script:
+- Verifica si tienes el archivo `.env`.
+- Instala las dependencias si es la primera vez (`npm install`).
+- Inicia el servidor de desarrollo (`npm run dev`).
+- Abre automáticamente tu navegador en la dirección correcta.
+
 ---
 
 ## 🔌 Cómo funciona el proxy de n8n
