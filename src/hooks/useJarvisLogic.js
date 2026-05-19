@@ -149,9 +149,7 @@ export const useJarvisLogic = () => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    chatInput: texto,
-                    sessionId: "dante_session_1",
-                    timestamp: new Date().toISOString()
+                    chatInput: texto
                 })
             });
 
