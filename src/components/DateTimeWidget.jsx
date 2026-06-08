@@ -36,7 +36,6 @@ const DateTimeWidget = () => {
         {dayName}
       </div>
       <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '15px' }}>
-        <div style={{ width: '40px', height: '2px', background: 'var(--primary-glow)', marginTop: '8px' }}></div>
         <div style={{ fontSize: '1rem', color: 'var(--primary-glow)', letterSpacing: '3px' }}>
           {hours}:{minutes}:{seconds}
         </div>

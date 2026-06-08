@@ -1,7 +1,18 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(gh repo *)",
+      "PowerShell(git clone --single-branch --depth 1 https://github.com/garrytan/gstack.git \"$env:USERPROFILE\\\\.claude\\\\skills\\\\gstack\")",
+      "PowerShell(Get-ChildItem *)",
+      "PowerShell($env:Path = \"$env:USERPROFILE\\\\.bun\\\\bin;\" + $env:Path; & \"C:\\\\Program Files\\\\Git\\\\bin\\\\bash.exe\" -c \"cd '/c/Users/Dante/.claude/skills/gstack' && export PATH='/c/Users/Dante/.bun/bin:'\\\\$PATH && ./setup\")",
+      "PowerShell(& \"C:\\\\Program Files\\\\Git\\\\bin\\\\bash.exe\" -lc 'export PATH=\"/c/Users/Dante/.bun/bin:$PATH\"; cd /c/Users/Dante/.claude/skills/gstack && bash ./setup')",
+      "PowerShell(Test-Path *)",
+      "Bash(command -v jq)",
+      "Bash(~/.claude/skills/gstack/bin/gstack-review-log '{\"skill\":\"plan-ceo-review\",\"timestamp\":\"2026-06-01T12:00:00Z\",\"status\":\"clean\",\"unresolved\":0,\"critical_gaps\":1,\"mode\":\"HOLD_SCOPE\",\"scope_proposed\":0,\"scope_accepted\":0,\"scope_deferred\":4,\"commit\":\"76bde5e\"}')",
+      "Bash(~/.claude/skills/gstack/bin/gstack-review-read)",
+      "Bash(~/.claude/skills/gstack/bin/gstack-timeline-log '{\"skill\":\"plan-ceo-review\",\"event\":\"completed\",\"branch\":\"main\",\"outcome\":\"success\"}')",
+      "Bash(npx eslint *)"
     ]
   }
 }

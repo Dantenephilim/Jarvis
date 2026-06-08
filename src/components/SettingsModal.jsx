@@ -70,7 +70,7 @@ const SettingsModal = ({ isOpen, onClose, onSave }) => {
         fetch(testUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: 'TEST_CONNECTION_FROM_JARVIS' })
+            body: JSON.stringify({ chatInput: 'TEST_CONNECTION_FROM_JARVIS' })
         })
             .then(res => {
                 if (res.ok) {

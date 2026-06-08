@@ -20,7 +20,12 @@ const ConsoleLog = ({ logs }) => {
                 {logs.length === 0 && (
                     <div className="empty-state">Initializing tracking data...</div>
                 )}
-                {logs.map((log, index) => {
+                {logs.map((logObj, index) => {
+                    const log = typeof logObj === 'string' ? logObj : logObj.text;
+                    const timeString = typeof logObj === 'string' 
+                        ? new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }) 
+                        : logObj.timestamp;
+                        
                     const isSystem = log.startsWith('SYSTEM:') || log.startsWith('CONNECTION');
                     const isJarvis = log.startsWith('JARVIS:');
                     const isError = log.startsWith('ERROR:');
@@ -32,7 +37,7 @@ const ConsoleLog = ({ logs }) => {
 
                     return (
                         <div key={index} className={className}>
-                            <span className="timestamp">[{new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}]</span>
+                            <span className="timestamp">[{timeString}]</span>
                             {log}
                         </div>
                     );

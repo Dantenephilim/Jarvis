@@ -23,7 +23,7 @@ const ShortcutsWidget = () => {
                  {name: 'LINKS', url: '#'}, 
                  {name: 'YOUTUBE', url: 'https://youtube.com'}, 
                  {name: 'GITHUB', url: 'https://github.com'}, 
-                 {name: 'TERMINAL', action: () => fetch('/api/spawn-cmd')}, 
+                 {name: 'TERMINAL', url: '#'}, 
                  {name: 'SECURE', url: '#'}].map((item, idx) => (
                 <a key={item.name} 
                    href={item.url || '#'} 

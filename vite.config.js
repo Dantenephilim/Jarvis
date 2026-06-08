@@ -6,12 +6,6 @@ import os from 'os'
 const localTerminalPlugin = () => ({
   name: 'local-terminal-plugin',
   configureServer(server) {
-    server.middlewares.use('/api/spawn-cmd', (req, res) => {
-      exec('start cmd.exe');
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: true }));
-    });
-    
     server.middlewares.use('/api/system-stats', (req, res) => {
       const totalMem = os.totalmem();
       const freeMem = os.freemem();

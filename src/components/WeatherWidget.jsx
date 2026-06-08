@@ -36,7 +36,7 @@ const WeatherWidget = () => {
         <div style={{
             position: 'absolute',
             right: '40px',
-            top: '150px',
+            top: '175px',
             color: 'var(--text-color)',
             fontFamily: 'var(--font-main)',
             width: '300px',

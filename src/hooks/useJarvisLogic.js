@@ -6,7 +6,15 @@ export const useJarvisLogic = () => {
     // Normalize: if stored URL is any full nexotechx URL, use the Vite proxy path instead
     const normalizeN8nUrl = (url) => {
         if (!url) return DEFAULT_N8N_URL;
-        if (url.includes('nexotechx.com')) return DEFAULT_N8N_URL;
+        if (url.includes('nexotechx.com')) {
+            try {
+                const parsedUrl = new URL(url);
+                // e.g. https://n8n.nexotechx.com/webhook/1234 -> /api/webhook/1234
+                return `/api${parsedUrl.pathname}${parsedUrl.search}`;
+            } catch (e) {
+                return DEFAULT_N8N_URL;
+            }
+        }
         return url;
     };
 
@@ -28,7 +36,9 @@ export const useJarvisLogic = () => {
 
     const addLog = (text) => {
         setLogs(prev => {
-            const updated = [...prev, text];
+            const timeString = new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const newLog = { text, timestamp: timeString };
+            const updated = [...prev, newLog];
             // Keep last 100 entries to prevent memory limits
             const limited = updated.slice(-100);
             localStorage.setItem('jarvis_console_logs', JSON.stringify(limited));
@@ -90,8 +100,6 @@ export const useJarvisLogic = () => {
 
             // If the browser blocks the microphone (permissions or HTTPS issue)
             if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-                // Set blocked flag SYNCHRONOUSLY before any async state update
-                // so that the onend handler (which may fire right after) won't restart.
                 isBlockedRef.current = true;
                 isMutedRef.current = true;
                 addLog("SYSTEM: Mic Blocked! Click the Red Mic button manually.");
@@ -117,15 +125,65 @@ export const useJarvisLogic = () => {
 
         recognitionRef.current = recognition;
 
-        // Kick off manually first time
-        if (!isMutedRef.current) {
-            try { recognition.start(); } catch(e) {}
-        }
+        // Kick off manually first time with a slight delay so browser is ready
+        setTimeout(() => {
+            if (!isMutedRef.current && statusRef.current === 'idle') {
+                try { recognition.start(); } catch(e) {}
+            }
+        }, 1000);
 
         return () => {
             if (recognitionRef.current) recognitionRef.current.abort();
         };
     }, []); // Empty dependency array ensures this doesn't endlessly unmount/remount
+
+    // Push-to-Talk (PTT) with Alt key
+    const isAltPressedRef = useRef(false);
+    const wasMutedBeforeAltRef = useRef(isMutedRef.current);
+
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === 'Alt' && !isAltPressedRef.current) {
+                e.preventDefault();
+                isAltPressedRef.current = true;
+                wasMutedBeforeAltRef.current = isMutedRef.current;
+                
+                if (isMutedRef.current) {
+                    setIsMuted(false);
+                    isMutedRef.current = false;
+                    isBlockedRef.current = false;
+                    
+                    if (statusRef.current !== 'speaking' && statusRef.current !== 'processing') {
+                        setTimeout(() => {
+                            try { recognitionRef.current?.start(); } catch(e) {}
+                        }, 50);
+                    }
+                }
+            }
+        };
+
+        const handleKeyUp = (e) => {
+            if (e.key === 'Alt') {
+                e.preventDefault();
+                isAltPressedRef.current = false;
+                
+                if (wasMutedBeforeAltRef.current && !isMutedRef.current) {
+                    setIsMuted(true);
+                    isMutedRef.current = true;
+                    try { recognitionRef.current?.abort(); } catch(e) {}
+                    setStatus('idle');
+                }
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup', handleKeyUp);
+        };
+    }, []);
 
     // Auto-resume logic:
     // Because we no longer destroy and recreate the microphone on every state change,
@@ -316,6 +374,19 @@ export const useJarvisLogic = () => {
         if (newUrl !== undefined) setN8nUrl(normalizeN8nUrl(newUrl));
     };
 
+    // Stable identities for callbacks consumed by external hooks (e.g. useClapDetector).
+    // speakWithElevenLabs and addLog are recreated every render; handing those out
+    // directly made useClapDetector tear down and re-acquire the mic on every render.
+    // These ref-backed wrappers keep a constant identity while always calling the latest.
+    const latestSpeak = useRef(speakWithElevenLabs);
+    const latestAddLog = useRef(addLog);
+    useEffect(() => {
+        latestSpeak.current = speakWithElevenLabs;
+        latestAddLog.current = addLog;
+    });
+    const forceSpeak = useCallback((text) => latestSpeak.current(text), []);
+    const stableAddLog = useCallback((text) => latestAddLog.current(text), []);
+
     return {
         status,
         transcript,
@@ -324,6 +395,8 @@ export const useJarvisLogic = () => {
         toggleMute,
         sendTextMessage,
         updateConfig,
-        isConnected: true
+        isConnected: true,
+        forceSpeak,
+        addLog: stableAddLog
     };
 };

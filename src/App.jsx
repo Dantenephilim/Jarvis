@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useJarvisLogic } from './hooks/useJarvisLogic';
 import { useSoundEffects } from './hooks/useSoundEffects';
+import { useClapDetector } from './hooks/useClapDetector';
 import JarvisOrb from './components/JarvisOrb';
 import SettingsModal from './components/SettingsModal';
 import ConsoleLog from './components/ConsoleLog';
@@ -8,13 +9,59 @@ import ShortcutsWidget from './components/ShortcutsWidget';
 import WeatherWidget from './components/WeatherWidget';
 import DateTimeWidget from './components/DateTimeWidget';
 import SysStatsWidget from './components/SysStatsWidget';
-import { Mic, MicOff, Settings, Wifi, WifiOff, Send } from 'lucide-react';
+import WebcamWidget from './components/WebcamWidget';
+import MusicWidget from './components/MusicWidget';
+import { Mic, MicOff, Settings, Wifi, WifiOff, Send, Camera, CameraOff, Music } from 'lucide-react';
 
 function App() {
-  const { status, logs, isMuted, toggleMute, updateConfig, isConnected, sendTextMessage } = useJarvisLogic();
+  const { status, logs, isMuted, toggleMute, updateConfig, isConnected, sendTextMessage, forceSpeak, addLog } = useJarvisLogic();
   const sounds = useSoundEffects();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [chatInput, setChatInput] = useState('');
+  const [isWebcamActive, setIsWebcamActive] = useState(false);
+  const [isMusicActive, setIsMusicActive] = useState(false);
+
+  const isClapProcessingRef = React.useRef(false);
+
+  // Busy flag the clap detector reads each frame. While JARVIS is speaking or
+  // music is playing, its own audio output would otherwise self-trigger claps.
+  const isBusyRef = React.useRef(false);
+  useEffect(() => {
+    isBusyRef.current = status === 'speaking' || status === 'processing' || isMusicActive;
+  }, [status, isMusicActive]);
+
+  // Clap Detection Logic
+  const handleClapDetected = useCallback(() => {
+    if (!isMusicActive && status !== 'speaking' && status !== 'processing') {
+      setIsMusicActive(true);
+      
+      const phrases = [
+        "Aquí estoy, señor.",
+        "A la orden, señor.",
+        "Sistemas de audio en línea.",
+        "Música ambiental activada.",
+        "Quedo a su disposición, señor."
+      ];
+      const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
+      forceSpeak(randomPhrase);
+    }
+  }, [isMusicActive, status, forceSpeak]);
+
+  useClapDetector({ onClap: handleClapDetected, isBusyRef, onError: addLog });
+
+  const [scale, setScale] = useState(1);
+
+  // Uniform scale to prevent stretching (perfect circles) while filling the screen
+  useEffect(() => {
+    const handleResize = () => {
+      // Find the most constrained dimension compared to 1080p to scale safely
+      const s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+      setScale(s);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Play sound on status change
   useEffect(() => {
@@ -37,6 +84,16 @@ function App() {
     toggleMute();
   };
 
+  const handleToggleWebcam = () => {
+    sounds.click();
+    setIsWebcamActive(!isWebcamActive);
+  };
+
+  const handleToggleMusic = () => {
+    sounds.click();
+    setIsMusicActive(!isMusicActive);
+  };
+
   const handleOpenSettings = () => {
     sounds.click();
     setIsSettingsOpen(true);
@@ -57,22 +114,35 @@ function App() {
         onSave={updateConfig}
       />
 
-      {/* FULL SCREEN HUD LAYOUT */}
-      <div className="hud-layout">
-        
-        {/* Modular Overlays */}
-        <div className="widgets-container">
-          <ShortcutsWidget onAction={sounds.click} />
-          <SysStatsWidget />
-          <DateTimeWidget />
-          <WeatherWidget />
-          
-          <div className="console-portal">
-             <ConsoleLog logs={logs || []} />
-          </div>
-        </div>
+      {/* FULL SCREEN HUD LAYOUT - CORNER ANCHORED */}
+      
+      {/* TOP LEFT ANCHOR */}
+      <div className="hud-layer" style={{ transformOrigin: 'top left', transform: `scale(${scale})` }}>
+        <ShortcutsWidget onAction={sounds.click} />
+        <MusicWidget isActive={isMusicActive} onClose={() => setIsMusicActive(false)} />
+      </div>
 
-        {/* Center Viewport */}
+      {/* LEFT CENTER ANCHOR */}
+      <div className="hud-layer" style={{ transformOrigin: 'left center', transform: `scale(${scale})` }}>
+        <SysStatsWidget />
+      </div>
+
+      {/* TOP RIGHT ANCHOR */}
+      <div className="hud-layer" style={{ transformOrigin: 'top right', transform: `scale(${scale})` }}>
+        <DateTimeWidget />
+        <WeatherWidget />
+        <WebcamWidget isActive={isWebcamActive} />
+      </div>
+
+      {/* BOTTOM RIGHT ANCHOR */}
+      <div className="hud-layer" style={{ transformOrigin: 'bottom right', transform: `scale(${scale})` }}>
+        <div className="console-portal">
+           <ConsoleLog logs={logs || []} />
+        </div>
+      </div>
+
+      {/* CENTER VIEWPORT ANCHOR */}
+      <div className="hud-layer" style={{ transformOrigin: 'center center', transform: `scale(${scale})` }}>
         <div className="core-viewport">
           
           <div className="orb-anchor">
@@ -94,12 +164,18 @@ function App() {
               {isMuted ? <MicOff size={20} /> : <Mic size={20} />}
             </button>
 
+            <button className="icon-btn" onClick={handleToggleWebcam} title={isWebcamActive ? "Disable Camera" : "Enable Camera"}
+              style={{ color: isWebcamActive ? 'var(--primary-glow)' : '#888' }}>
+              {isWebcamActive ? <Camera size={20} /> : <CameraOff size={20} />}
+            </button>
+
             <button className="icon-btn" title={isConnected ? "Network Connected" : "Network Disconnected"}
               style={{ color: isConnected ? 'var(--primary-glow)' : 'var(--alert-color)', cursor: 'default' }}>
               {isConnected ? <Wifi size={20} /> : <WifiOff size={20} />}
             </button>
 
-            <button className="icon-btn" onClick={handleOpenSettings} title="Settings">
+            <button className="icon-btn" onClick={handleOpenSettings} title="Settings"
+              style={{ color: '#888' }}>
               <Settings size={20} />
             </button>
           </div>
@@ -122,19 +198,30 @@ function App() {
       </div>
 
       <style jsx="true">{`
-        .hud-layout {
+        /* FULL EDGE-TO-EDGE CANVAS */
+        .jarvis-container {
+          width: 100vw;
+          height: 100vh;
+          position: absolute;
+          top: 0;
+          left: 0;
+          overflow: hidden;
+        }
+
+        /* ANCHOR LAYERS */
+        .hud-layer {
           position: absolute;
           top: 0; left: 0; width: 100vw; height: 100vh;
           overflow: hidden;
           pointer-events: none;
           z-index: 50;
         }
-        .widgets-container {
+        
+        /* Enable clicking on widgets inside layers */
+        .hud-layer > * {
           pointer-events: auto;
-          position: relative;
-          width: 100%;
-          height: 100%;
         }
+
         .console-portal {
           position: absolute;
           right: 40px;
@@ -157,7 +244,7 @@ function App() {
           display: flex;
           justify-content: center;
           align-items: center;
-          min-height: 400px; /* Reduced space holder */
+          min-height: 400px;
         }
         .status-plate {
           display: flex;
@@ -170,9 +257,24 @@ function App() {
           display: flex; gap: 20px; padding: 5px 20px;
           border-bottom: 1px solid var(--primary-glow);
           align-items: center;
-          margin-top: 80px; margin-bottom: 15px;
+          margin-top: 30px; margin-bottom: 15px;
           position: relative; z-index: 100;
           pointer-events: auto;
+        }
+        .icon-btn {
+          background: none;
+          border: none;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 8px;
+          border-radius: 50%;
+        }
+        .icon-btn:hover {
+          background: rgba(255,255,255,0.05);
+          transform: scale(1.1);
         }
         .directive-input-form {
           display: flex; align-items: center;
@@ -194,9 +296,12 @@ function App() {
         }
 
         @media (max-width: 768px) {
+          .right-hud-panel {
+             right: 10px; top: 10px; bottom: 10px; width: auto; align-items: flex-end;
+          }
           .directive-input-form { width: 90vw; }
           .status-plate { margin-top: -60px; }
-          .console-portal { right: 10px; bottom: 10px; width: 95vw; }
+          .console-portal { width: 95vw; }
         }
       `}</style>
     </div>
