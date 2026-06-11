@@ -154,7 +154,7 @@ const SuitWidget = () => {
   }, []);
 
   return (
-    <div className="suit-widget-container" style={{ top: '10px', left: '20px', position: 'absolute' }}>
+    <div className="suit-widget-container" style={{ top: '20px', left: '30px', position: 'absolute' }}>
       <div className="suit-hologram-wrapper">
         <canvas ref={canvasRef} className="holo-canvas" />
       </div>

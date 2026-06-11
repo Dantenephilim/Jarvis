@@ -5,7 +5,7 @@ const ShortcutsWidget = () => {
         <div style={{
             position: 'absolute',
             left: '40px',
-            top: '20vh',
+            top: '250px',
             display: 'flex',
             flexDirection: 'column',
             gap: '15px',
@@ -48,11 +48,7 @@ const ShortcutsWidget = () => {
                 </a>
             ))}
 
-            <div style={{ marginTop: '50px', display: 'flex', gap: '15px', flexDirection: 'column' }}>
-                <div style={{ color: '#555', letterSpacing:'1px' }}>MEMORY <span style={{ color:'var(--primary-glow)' }}>3.4 GB</span></div>
-                <div style={{ color: '#555', letterSpacing:'1px' }}>NETWORK <span style={{ color:'var(--primary-glow)' }}>99.9 MB</span></div>
-                <div style={{ color: '#555', letterSpacing:'1px' }}>LATENCY <span style={{ color:'var(--primary-glow)' }}>13 MS</span></div>
-            </div>
+
         </div>
     );
 };

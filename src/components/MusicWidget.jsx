@@ -14,65 +14,67 @@ const MusicWidget = ({ isActive, onToggle }) => {
     const sourceRef = useRef(null);
     const requestRef = useRef(null);
 
-    useEffect(() => {
-        if (!audioRef.current) {
-            audioRef.current = new window.Audio(audioFile);
-            audioRef.current.loop = false;
-            // Needed to allow Web Audio API to process local media files in some browsers
-            audioRef.current.crossOrigin = "anonymous";
-            audioRef.current.onended = () => {
-                if (onToggle) onToggle();
-            };
+    const setupVisualizer = () => {
+        if (!audioCtxRef.current) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            audioCtxRef.current = new AudioContext();
+            analyserRef.current = audioCtxRef.current.createAnalyser();
+            analyserRef.current.fftSize = 512;
+            
+            sourceRef.current = audioCtxRef.current.createMediaElementSource(audioRef.current);
+            sourceRef.current.connect(analyserRef.current);
+            analyserRef.current.connect(audioCtxRef.current.destination);
         }
+        if (audioCtxRef.current.state === 'suspended') {
+            audioCtxRef.current.resume();
+        }
+    };
 
+    const drawVisualizer = () => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const analyser = analyserRef.current;
+        if (!analyser) return;
+
+        requestRef.current = requestAnimationFrame(drawVisualizer);
+
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+        
+        analyser.getByteTimeDomainData(dataArray);
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        const sliceWidth = canvas.width * 1.0 / bufferLength;
+        let x = 0;
+
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = 'rgba(200, 255, 255, 0.9)';
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = '#00f3ff';
+        ctx.beginPath();
+
+        for(let i = 0; i < bufferLength; i++) {
+            const v = (dataArray[i] - 128) / 128.0; // -1 to 1
+            const amplitude = Math.abs(v) * (canvas.height / 2.5);
+            const yCenter = canvas.height / 2;
+            
+            ctx.moveTo(x, yCenter - amplitude);
+            ctx.lineTo(x, yCenter + amplitude);
+            x += sliceWidth;
+        }
+        ctx.stroke();
+    };
+
+    useEffect(() => {
         const audio = audioRef.current;
+        if (!audio) return;
 
-        const setupVisualizer = () => {
-            if (!audioCtxRef.current) {
-                const AudioContext = window.AudioContext || window.webkitAudioContext;
-                audioCtxRef.current = new AudioContext();
-                analyserRef.current = audioCtxRef.current.createAnalyser();
-                analyserRef.current.fftSize = 128;
-                
-                sourceRef.current = audioCtxRef.current.createMediaElementSource(audio);
-                sourceRef.current.connect(analyserRef.current);
-                analyserRef.current.connect(audioCtxRef.current.destination);
-            }
-            if (audioCtxRef.current.state === 'suspended') {
-                audioCtxRef.current.resume();
-            }
-        };
-
-        const drawVisualizer = () => {
-            const canvas = canvasRef.current;
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            const analyser = analyserRef.current;
-            if (!analyser) return;
-
-            requestRef.current = requestAnimationFrame(drawVisualizer);
-
-            const bufferLength = analyser.frequencyBinCount;
-            const dataArray = new Uint8Array(bufferLength);
-            
-            // Continues drawing even if paused (array will naturally decay to 0, leaving an empty flat spectrum)
-            analyser.getByteFrequencyData(dataArray);
-
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            const barWidth = (canvas.width / bufferLength) * 1.5;
-            let barHeight;
-            let x = 0;
-
-            for(let i = 0; i < bufferLength; i++) {
-                barHeight = dataArray[i] / 2.5; 
-                ctx.fillStyle = `rgba(0, 243, 255, ${barHeight/100 + 0.2})`;
-                ctx.fillRect(x, canvas.height - barHeight, barWidth - 1, barHeight);
-                x += barWidth;
-            }
-        };
+        // Sync external state changes (e.g. voice commands turning music on/off)
 
         try {
+            // Handle external state changes (like clap detection)
             if (isActive && !wasActiveRef.current) {
                 audio.currentTime = 7;
                 audio.volume = 0.25;
@@ -80,7 +82,7 @@ const MusicWidget = ({ isActive, onToggle }) => {
                 audio.play().then(() => {
                     setIsPlaying(true);
                     if (!requestRef.current) drawVisualizer();
-                }).catch(e => console.error("Audio play blocked", e));
+                }).catch(e => console.error("Audio blocked natively", e));
                 wasActiveRef.current = true;
             } else if (!isActive && wasActiveRef.current) {
                 audio.pause();
@@ -90,16 +92,46 @@ const MusicWidget = ({ isActive, onToggle }) => {
         } catch (e) {
             console.error("Error controlling audio player", e);
         }
-
-        return () => {};
     }, [isActive]);
 
     const handleTogglePlayback = () => {
-        if (onToggle) onToggle();
+        if (!audioRef.current) return;
+        
+        const audio = audioRef.current;
+        
+        if (isPlaying) {
+            audio.pause();
+            setIsPlaying(false);
+            wasActiveRef.current = false;
+        } else {
+            if (!audioCtxRef.current) {
+                audio.currentTime = 7;
+                audio.volume = 0.25;
+            }
+            setupVisualizer();
+            audio.play().then(() => {
+                if (!requestRef.current) drawVisualizer();
+            }).catch(e => console.error("Direct audio play blocked", e));
+            setIsPlaying(true);
+            wasActiveRef.current = true;
+        }
+        
+        if (onToggle) onToggle(); // sync global state
     };
 
     return (
         <div className="music-container">
+            <audio 
+                ref={audioRef} 
+                src={audioFile} 
+                crossOrigin="anonymous" 
+                onEnded={() => {
+                    if (onToggle) onToggle();
+                    setIsPlaying(false);
+                    wasActiveRef.current = false;
+                }}
+                preload="auto"
+            />
             <div className="music-header">
                 <Music size={12} className="text-cyan" />
                 <span className="label">AC/DC - SHOOT TO THRILL</span>
@@ -118,7 +150,7 @@ const MusicWidget = ({ isActive, onToggle }) => {
             <style jsx="true">{`
                 .music-container {
                     position: absolute;
-                    bottom: 250px;
+                    top: 500px;
                     left: 30px;
                     width: 200px;
                     background: rgba(0, 5, 10, 0.6);

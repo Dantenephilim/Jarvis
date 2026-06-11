@@ -197,3 +197,69 @@ body {
   .hud-corner { display: none; }
   .tactical-grid { background-size: 30px 30px; }
 }
+
+/* Startup HUD Animations */
+.hud-hidden {
+    opacity: 0 !important;
+    pointer-events: none;
+}
+
+.hud-anim-wrapper {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none !important;
+}
+
+.hud-anim-wrapper > * {
+    pointer-events: auto;
+}
+
+.anim-slide-right {
+    animation: hudSlideRight 1.5s cubic-bezier(0.1, 0.9, 0.2, 1) both;
+}
+
+.anim-slide-right-delayed {
+    animation: hudSlideRight 1.5s cubic-bezier(0.1, 0.9, 0.2, 1) both;
+    animation-delay: 0.3s;
+    opacity: 0;
+}
+
+.anim-slide-left {
+    animation: hudSlideLeft 1.5s cubic-bezier(0.1, 0.9, 0.2, 1) both;
+    animation-delay: 0.2s;
+    opacity: 0;
+}
+
+.anim-fade-slow {
+    animation: hudFadeSlow 3s ease-out both;
+    animation-delay: 0.6s;
+    opacity: 0;
+}
+
+.anim-zoom-in {
+    animation: hudZoomIn 1.2s cubic-bezier(0.1, 0.9, 0.2, 1) both;
+    animation-delay: 0.4s;
+    opacity: 0;
+}
+
+@keyframes hudSlideRight {
+    0% { opacity: 0; transform: translateX(-150px) scale(0.95); filter: blur(5px); }
+    100% { opacity: 1; transform: translateX(0) scale(1); filter: blur(0px); }
+}
+
+@keyframes hudSlideLeft {
+    0% { opacity: 0; transform: translateX(150px) scale(0.95); filter: blur(5px); }
+    100% { opacity: 1; transform: translateX(0) scale(1); filter: blur(0px); }
+}
+
+@keyframes hudFadeSlow {
+    0% { opacity: 0; filter: blur(10px); }
+    100% { opacity: 1; filter: blur(0px); }
+}
+
+@keyframes hudZoomIn {
+    0% { opacity: 0; transform: scale(0.7) translateY(50px); filter: blur(8px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0px); }
+}

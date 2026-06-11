@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useProgress } from '@react-three/drei';
 import { useJarvisLogic } from './hooks/useJarvisLogic';
 import { useSoundEffects } from './hooks/useSoundEffects';
@@ -19,12 +19,14 @@ import HoloModelWidget from './components/HoloModelWidget';
 import LogoWidget from './components/LogoWidget';
 import { Mic, MicOff, Settings, Wifi, WifiOff, Send, Camera, CameraOff, Music } from 'lucide-react';
 
-const GlobalLoader = () => {
+const GlobalLoader = ({ onReady }) => {
   const { active, progress } = useProgress();
   const [show, setShow] = useState(true);
   const [dots, setDots] = useState('');
   const [isFading, setIsFading] = useState(false);
-  
+  const [displayedProgress, setDisplayedProgress] = useState(0);
+  const hasCompletedRef = useRef(false);
+
   useEffect(() => {
     const dotInterval = setInterval(() => {
       setDots(prev => prev.length >= 3 ? '' : prev + '.');
@@ -32,17 +34,39 @@ const GlobalLoader = () => {
     return () => clearInterval(dotInterval);
   }, []);
 
+  // Smooth progress calculation
   useEffect(() => {
-    // When 3D model finishes loading, start the fade-out transition
-    if (!active && progress === 100) {
-      // Add a 2.5 second artificial delay so the background and 3D model fully stabilize and render before revealing
+    let interval = setInterval(() => {
+        setDisplayedProgress(prev => {
+            if (prev >= 100) return 100;
+            
+            const isDone = !active && progress === 100;
+            const target = isDone ? 100 : Math.max(progress * 0.9, prev);
+            
+            if (isDone) {
+                // If model is loaded, climb at a steady cinematic pace
+                // 1.25 per 50ms = 25 per second. Reaches 100 in 4 seconds.
+                return Math.min(100, prev + 1.25);
+            } else {
+                // Chase target smoothly
+                return prev + (target - prev) * 0.1;
+            }
+        });
+    }, 50);
+    return () => clearInterval(interval);
+  }, [active, progress]);
+
+  useEffect(() => {
+    if (displayedProgress >= 100 && !hasCompletedRef.current) {
+      hasCompletedRef.current = true;
       const waitTimer = setTimeout(() => {
+        if (onReady) onReady();
         setIsFading(true);
-        setTimeout(() => setShow(false), 1200); // Wait for CSS transition
-      }, 2500); 
+        setTimeout(() => setShow(false), 1200); 
+      }, 600); // Brief 600ms pause at 100% so it's clearly readable
       return () => clearTimeout(waitTimer);
     }
-  }, [active, progress]);
+  }, [displayedProgress]);
 
   if (!show) return null;
 
@@ -70,7 +94,7 @@ const GlobalLoader = () => {
         
         {/* Progress Text */}
         <div style={{ color: '#00f3ff', fontSize: '24px', fontWeight: 'bold', textShadow: '0 0 10px #00f3ff' }}>
-          {progress.toFixed(0)}%
+          {displayedProgress.toFixed(0)}%
         </div>
       </div>
 
@@ -93,6 +117,7 @@ function App() {
   const [chatInput, setChatInput] = useState('');
   const [isWebcamActive, setIsWebcamActive] = useState(true);
   const [isMusicActive, setIsMusicActive] = useState(false);
+  const [isAppReady, setIsAppReady] = useState(false);
 
   const isClapProcessingRef = React.useRef(false);
 
@@ -167,7 +192,7 @@ function App() {
 
   return (
     <div className="jarvis-container">
-      <GlobalLoader />
+      <GlobalLoader onReady={() => setIsAppReady(true)} />
       
       {/* HUD Aesthetic Layers */}
       <div className="tactical-grid" />
@@ -192,41 +217,50 @@ function App() {
         <LogoWidget />
       </div>
 
+      {/* TOP LEFT ANCHOR */}
       <div className="hud-layer" style={{ transformOrigin: 'top left', transform: `scale(${scale})` }}>
-        <SuitWidget />
-        <ShortcutsWidget onAction={sounds.click} />
+        <div className={`hud-anim-wrapper ${isAppReady ? 'anim-slide-right' : 'hud-hidden'}`}>
+          <SuitWidget />
+          <ShortcutsWidget onAction={sounds.click} />
+        </div>
       </div>
 
       {/* LEFT CENTER ANCHOR (SysStats + Music) */}
       <div className="hud-layer" style={{ transformOrigin: 'left center', transform: `scale(${scale})` }}>
-        <SysStatsWidget />
-        <MusicWidget isActive={isMusicActive} onToggle={() => {
-            const nextState = !isMusicActive;
-            setIsMusicActive(nextState);
-            setMuteState(nextState); // Mutes when playing, unmutes when stopped
-        }} />
-      </div>
-
-      {/* TOP RIGHT ANCHOR */}
-      <div className="hud-layer" style={{ transformOrigin: 'top right', transform: `scale(${scale})` }}>
-        <DateTimeWidget />
-        <WeatherWidget />
-        <WebcamWidget isActive={isWebcamActive} />
-      </div>
-
-
-
-      {/* BOTTOM RIGHT ANCHOR */}
-      <div className="hud-layer" style={{ transformOrigin: 'bottom right', transform: `scale(${scale})` }}>
-        <div className="bottom-right-container">
-           <AudioVisualizerWidget isMuted={isMuted} />
-           <div className="console-portal">
-              <ConsoleLog logs={logs || []} />
-           </div>
+        <div className={`hud-anim-wrapper ${isAppReady ? 'anim-slide-right-delayed' : 'hud-hidden'}`}>
+          <SysStatsWidget />
+          <MusicWidget isActive={isMusicActive} onToggle={() => {
+              const nextState = !isMusicActive;
+              setIsMusicActive(nextState);
+              setMuteState(nextState); // Mutes when playing, unmutes when stopped
+          }} />
         </div>
       </div>
 
-      {/* BOTTOM CENTER VIEWPORT ANCHOR */}
+      {/* BOTTOM RIGHT ANCHOR (Clock + Console + Mic) */}
+      <div className="hud-layer" style={{ transformOrigin: 'bottom right', transform: `scale(${scale})` }}>
+        <div className={`hud-anim-wrapper ${isAppReady ? 'anim-slide-left' : 'hud-hidden'}`}>
+          <DateTimeWidget />
+          <ConsoleLog logs={logs || []} />
+          <AudioVisualizerWidget isMuted={isMuted} />
+        </div>
+      </div>
+
+      {/* TOP RIGHT ANCHOR - TIME/WEATHER */}
+      <div className="hud-layer" style={{ transformOrigin: 'top right', transform: `scale(${scale})` }}>
+        <div className={`hud-anim-wrapper ${isAppReady ? 'anim-fade-slow' : 'hud-hidden'}`}>
+          <WeatherWidget />
+        </div>
+      </div>
+
+      {/* TOP RIGHT ANCHOR - CAMERA */}
+      <div className="hud-layer" style={{ transformOrigin: 'top right', transform: `scale(${scale})` }}>
+        <div className={`hud-anim-wrapper ${isAppReady ? 'anim-slide-left' : 'hud-hidden'}`}>
+          <WebcamWidget isActive={isWebcamActive} />
+        </div>
+      </div>
+
+      {/* BOTTOM CENTER ANCHOR (Chat) */}
       <div className="hud-layer" style={{ transformOrigin: 'bottom center', transform: `scale(${scale})` }}>
         <div className="core-viewport">
           {/* Status Indicators */}
@@ -303,7 +337,7 @@ function App() {
         }
         
         /* Enable clicking on widgets inside layers */
-        .hud-layer > * {
+        .hud-layer * {
           pointer-events: auto;
         }
 

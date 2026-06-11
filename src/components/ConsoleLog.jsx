@@ -49,6 +49,9 @@ const ConsoleLog = ({ logs }) => {
                 .console-container {
                     width: 320px;
                     height: 35vh;
+                    position: absolute;
+                    bottom: 40px;
+                    right: 40px;
                     display: flex;
                     flex-direction: column;
                     background: rgba(0, 5, 10, 0.4);

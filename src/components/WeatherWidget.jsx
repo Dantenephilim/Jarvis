@@ -30,7 +30,7 @@ const WeatherWidget = () => {
         fetchWeather();
     }, []);
 
-    if (!weather) return <div style={{ position: 'absolute', right: '40px', top: '150px', color: '#555', fontSize: '0.65rem', fontFamily: 'var(--font-main)' }}>Initializing METEO...</div>;
+    if (!weather) return <div style={{ position: 'absolute', right: '40px', top: '120px', color: '#555', fontSize: '0.65rem', fontFamily: 'var(--font-main)' }}>Initializing METEO...</div>;
 
     return (
         <div style={{

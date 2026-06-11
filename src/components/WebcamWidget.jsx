@@ -1,10 +1,11 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Camera, AlertCircle } from 'lucide-react';
+import { Camera, AlertCircle, Eye, EyeOff } from 'lucide-react';
 
 const WebcamWidget = ({ isActive }) => {
     const videoRef = useRef(null);
     const [hasError, setHasError] = useState(false);
     const [isStreaming, setIsStreaming] = useState(false);
+    const [realColor, setRealColor] = useState(false);
 
     useEffect(() => {
         let stream = null;
@@ -59,7 +60,20 @@ const WebcamWidget = ({ isActive }) => {
             <div className="webcam-header">
                 <Camera size={12} className={isActive ? "text-cyan" : "text-gray"} style={{ opacity: isActive ? 1 : 0.5 }} />
                 <span className="label" style={{ opacity: isActive ? 1 : 0.5 }}>OPTICAL SENSOR</span>
-                <div className={`pulse-dot ${isStreaming ? 'active' : ''}`} />
+                <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <button 
+                        onClick={() => setRealColor(!realColor)}
+                        style={{ 
+                            background: 'transparent', border: 'none', cursor: 'pointer', 
+                            color: realColor ? '#fff' : 'rgba(0, 243, 255, 0.5)',
+                            display: 'flex', alignItems: 'center', padding: 0
+                        }}
+                        title="Toggle True Color"
+                    >
+                        {realColor ? <Eye size={12} /> : <EyeOff size={12} />}
+                    </button>
+                    <div className={`pulse-dot ${isStreaming ? 'active' : ''}`} />
+                </div>
             </div>
 
             <div className="webcam-feed-wrapper">
@@ -80,7 +94,10 @@ const WebcamWidget = ({ isActive }) => {
                         playsInline 
                         muted 
                         className="webcam-video"
-                        style={{ opacity: isStreaming ? 1 : 0 }}
+                        style={{ 
+                            opacity: isStreaming ? 1 : 0,
+                            filter: realColor ? 'none' : 'contrast(1.1) brightness(1.1) saturate(0.8) sepia(0.2) hue-rotate(180deg)'
+                        }}
                     />
                 )}
                 <div className="crosshair-overlay"></div>
@@ -89,9 +106,9 @@ const WebcamWidget = ({ isActive }) => {
             <style jsx="true">{`
                 .webcam-container {
                     position: absolute;
-                    top: 390px;
+                    top: 450px;
                     right: 40px;
-                    width: 260px;
+                    width: 320px;
                     background: rgba(0, 5, 10, 0.6);
                     border: 1px solid rgba(0, 243, 255, 0.2);
                     border-right-width: 4px;
@@ -120,7 +137,6 @@ const WebcamWidget = ({ isActive }) => {
                     width: 6px; height: 6px;
                     background: #555;
                     border-radius: 50%;
-                    margin-left: auto;
                 }
                 .pulse-dot.active {
                     background: var(--alert-color); /* Red recording dot */
@@ -140,7 +156,6 @@ const WebcamWidget = ({ isActive }) => {
                     object-fit: cover;
                     /* Flip horizontally so it acts like a mirror */
                     transform: scaleX(-1);
-                    filter: contrast(1.1) brightness(1.1) saturate(0.8) sepia(0.2) hue-rotate(180deg); /* Slight blue tint */
                 }
                 .webcam-error {
                     position: absolute;

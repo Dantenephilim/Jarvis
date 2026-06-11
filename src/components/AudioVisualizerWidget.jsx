@@ -70,7 +70,7 @@ const AudioVisualizerWidget = ({ isMuted }) => {
           const sliceWidth = canvas.width * 1.0 / bufferLength;
           let x = 0;
 
-          // 2. Draw Top Half: Mirrored dense waveform
+          // 2. Draw Mirrored Dense Waveform Centered
           ctx.lineWidth = 1.5;
           ctx.strokeStyle = 'rgba(200, 255, 255, 0.9)';
           ctx.shadowBlur = 10;
@@ -80,15 +80,13 @@ const AudioVisualizerWidget = ({ isMuted }) => {
           for (let i = 0; i < bufferLength; i++) {
             const v = (dataArray[i] - 128) / 128.0; // -1 to 1
             const amplitude = Math.abs(v) * (canvas.height / 2.5);
-            const yCenter = canvas.height / 4;
+            const yCenter = canvas.height / 2;
             
             ctx.moveTo(x, yCenter - amplitude);
             ctx.lineTo(x, yCenter + amplitude);
             x += sliceWidth;
           }
           ctx.stroke();
-
-          // Removed the Bottom Half Smooth Envelope Curve per user request
         };
 
         draw();
@@ -111,7 +109,7 @@ const AudioVisualizerWidget = ({ isMuted }) => {
   }, [isMuted]);
 
   return (
-    <div className="audio-visualizer-panel">
+    <div className="audio-visualizer-panel" style={{ position: 'absolute', bottom: 'calc(40px + 35vh + 20px)', right: '40px', width: '320px' }}>
       <div className="tech-brackets">
          <div className="corner top-left"></div>
          <div className="corner top-right"></div>

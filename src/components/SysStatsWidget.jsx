@@ -102,17 +102,13 @@ const SysStatsWidget = () => {
         <div style={{
             position: 'absolute',
             left: '30px',
-            bottom: '30px',
+            top: '630px',
             display: 'flex',
             flexDirection: 'column',
             gap: '15px',
             fontFamily: 'var(--font-main)'
         }}>
-            {/* Header info */}
-            <div style={{ fontSize: '0.65rem', color: '#999', letterSpacing: '1px' }}>
-                <div style={{ color: 'var(--primary-glow)', marginBottom: '5px' }}>{stats.cpu.substring(0, 25)}</div>
-                <div>CORES: <span style={{color: '#fff'}}>{stats.cores}</span> | RAM: <span style={{color: '#fff'}}>{stats.totalRam} GB</span></div>
-            </div>
+
 
             {/* Graphs - Unified Color Scheme */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>

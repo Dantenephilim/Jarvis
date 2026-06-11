@@ -11,6 +11,7 @@ const IronManModel = () => {
   const [hoveredInfo, setHoveredInfo] = useState(null);
   const velocity = useRef({ x: 0, y: 0.005 });
   const lastMouse = useRef({ x: 0, y: 0 });
+  const clearHoverTimeout = useRef(null);
   const spawnProgress = useRef(0);
 
   useMemo(() => {
@@ -147,6 +148,7 @@ const IronManModel = () => {
 
   const handlePointerOver = (e) => {
     e.stopPropagation();
+    if (clearHoverTimeout.current) clearTimeout(clearHoverTimeout.current);
     if (!isDragging && e.object && e.object.name) {
       // Create a clean readable name from the mesh node name
       let cleanName = e.object.name.replace(/_/g, ' ').toUpperCase();
@@ -169,8 +171,10 @@ const IronManModel = () => {
   };
 
   const handlePointerOut = (e) => {
-    setHoveredInfo(null);
-    document.body.style.cursor = 'auto';
+    clearHoverTimeout.current = setTimeout(() => {
+      setHoveredInfo(null);
+      document.body.style.cursor = 'auto';
+    }, 50);
   };
 
   return (
@@ -181,7 +185,7 @@ const IronManModel = () => {
       onPointerUp={handlePointerUp}
       onPointerOut={(e) => { handlePointerOut(e); handlePointerUp(e); }}
       onPointerOver={handlePointerOver}
-      scale={0.01} 
+      scale={0.015} 
     >
       <Center>
         <Bvh firstHitOnly>
@@ -228,13 +232,9 @@ const IronManModel = () => {
 
 const HoloModelWidget = () => {
   return (
-    // Expanded the bounding box to 600x600 to prevent clipping the 3D model into a "rectangle".
-    // Left and bottom are adjusted so the visual center remains exactly in the same spot.
-    <div style={{ position: 'absolute', bottom: '-70px', left: '110px', width: '600px', height: '600px', zIndex: 15, overflow: 'visible' }}>
+    <div style={{ position: 'absolute', bottom: '30px', left: '10px', width: '350px', height: '450px', zIndex: 15, overflow: 'visible' }}>
       <div style={{ width: '100%', height: '100%', overflow: 'visible' }}>
         <Canvas 
-          // Moved the camera further back (from 5 to 7.5) to maintain the exact same visual size of the model
-          // because the canvas height increased by a factor of 1.5 (400 -> 600)
           camera={{ position: [0, 0, 7.5], fov: 45 }} 
           style={{ width: '100%', height: '100%', overflow: 'visible' }}
         >
