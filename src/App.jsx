@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useProgress } from '@react-three/drei';
 import { useJarvisLogic } from './hooks/useJarvisLogic';
 import { useSoundEffects } from './hooks/useSoundEffects';
 import { useClapDetector } from './hooks/useClapDetector';
-import JarvisOrb from './components/JarvisOrb';
+import VoiceCore from './components/VoiceCore';
+import VoiceCore_CyberNeon from './themes/VoiceCore_CyberNeon';
 import SettingsModal from './components/SettingsModal';
 import ConsoleLog from './components/ConsoleLog';
 import ShortcutsWidget from './components/ShortcutsWidget';
@@ -11,14 +13,85 @@ import DateTimeWidget from './components/DateTimeWidget';
 import SysStatsWidget from './components/SysStatsWidget';
 import WebcamWidget from './components/WebcamWidget';
 import MusicWidget from './components/MusicWidget';
+import AudioVisualizerWidget from './components/AudioVisualizerWidget';
+import SuitWidget from './components/SuitWidget';
+import HoloModelWidget from './components/HoloModelWidget';
+import LogoWidget from './components/LogoWidget';
 import { Mic, MicOff, Settings, Wifi, WifiOff, Send, Camera, CameraOff, Music } from 'lucide-react';
 
+const GlobalLoader = () => {
+  const { active, progress } = useProgress();
+  const [show, setShow] = useState(true);
+  const [dots, setDots] = useState('');
+  const [isFading, setIsFading] = useState(false);
+  
+  useEffect(() => {
+    const dotInterval = setInterval(() => {
+      setDots(prev => prev.length >= 3 ? '' : prev + '.');
+    }, 500);
+    return () => clearInterval(dotInterval);
+  }, []);
+
+  useEffect(() => {
+    // When 3D model finishes loading, start the fade-out transition
+    if (!active && progress === 100) {
+      // Add a 2.5 second artificial delay so the background and 3D model fully stabilize and render before revealing
+      const waitTimer = setTimeout(() => {
+        setIsFading(true);
+        setTimeout(() => setShow(false), 1200); // Wait for CSS transition
+      }, 2500); 
+      return () => clearTimeout(waitTimer);
+    }
+  }, [active, progress]);
+
+  if (!show) return null;
+
+  return (
+    <div style={{
+      position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+      display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
+      backgroundColor: '#020610', zIndex: 99999, fontFamily: 'var(--font-main, monospace)',
+      opacity: isFading ? 0 : 1,
+      transform: isFading ? 'scale(1.05)' : 'scale(1)',
+      pointerEvents: isFading ? 'none' : 'auto',
+      transition: 'opacity 1s ease-out, transform 1s ease-out'
+    }}>
+      <div className="tactical-grid" />
+      
+      {/* Outer Ring */}
+      <div style={{ position: 'relative', width: '200px', height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <svg width="200" height="200" style={{ position: 'absolute', animation: 'spin-slow 8s linear infinite' }}>
+           <circle cx="100" cy="100" r="90" fill="none" stroke="rgba(0, 243, 255, 0.2)" strokeWidth="2" strokeDasharray="10 20" />
+           <circle cx="100" cy="100" r="80" fill="none" stroke="rgba(0, 243, 255, 0.4)" strokeWidth="1" strokeDasharray="40 10 10 10" />
+        </svg>
+        <svg width="200" height="200" style={{ position: 'absolute', animation: 'spin-reverse-slow 12s linear infinite' }}>
+           <circle cx="100" cy="100" r="70" fill="none" stroke="#00f3ff" strokeWidth="4" strokeDasharray="100 200" style={{ filter: 'drop-shadow(0 0 10px #00f3ff)' }} />
+        </svg>
+        
+        {/* Progress Text */}
+        <div style={{ color: '#00f3ff', fontSize: '24px', fontWeight: 'bold', textShadow: '0 0 10px #00f3ff' }}>
+          {progress.toFixed(0)}%
+        </div>
+      </div>
+
+      <div style={{ marginTop: '30px', color: '#00f3ff', fontSize: '14px', letterSpacing: '4px', textShadow: '0 0 5px #00f3ff' }}>
+        INITIALIZING SYSTEMS{dots}
+      </div>
+      
+      {/* Progress Bar */}
+      <div style={{ width: '300px', height: '2px', background: 'rgba(0, 243, 255, 0.1)', marginTop: '20px', overflow: 'hidden' }}>
+        <div style={{ width: `${progress}%`, height: '100%', background: '#00f3ff', boxShadow: '0 0 10px #00f3ff', transition: 'width 0.3s ease-out' }} />
+      </div>
+    </div>
+  );
+};
+
 function App() {
-  const { status, logs, isMuted, toggleMute, updateConfig, isConnected, sendTextMessage, forceSpeak, addLog } = useJarvisLogic();
+  const { status, logs, isMuted, toggleMute, setMuteState, updateConfig, isConnected, sendTextMessage, forceSpeak, addLog, activeTheme } = useJarvisLogic();
   const sounds = useSoundEffects();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [chatInput, setChatInput] = useState('');
-  const [isWebcamActive, setIsWebcamActive] = useState(false);
+  const [isWebcamActive, setIsWebcamActive] = useState(true);
   const [isMusicActive, setIsMusicActive] = useState(false);
 
   const isClapProcessingRef = React.useRef(false);
@@ -32,20 +105,13 @@ function App() {
 
   // Clap Detection Logic
   const handleClapDetected = useCallback(() => {
-    if (!isMusicActive && status !== 'speaking' && status !== 'processing') {
+    // Only detect claps if the microphone is ACTIVE (!isMuted)
+    if (!isMuted && !isMusicActive && status !== 'speaking' && status !== 'processing') {
       setIsMusicActive(true);
-      
-      const phrases = [
-        "Aquí estoy, señor.",
-        "A la orden, señor.",
-        "Sistemas de audio en línea.",
-        "Música ambiental activada.",
-        "Quedo a su disposición, señor."
-      ];
-      const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
-      forceSpeak(randomPhrase);
+      forceSpeak("Bienvenido señor.");
+      setMuteState(true);
     }
-  }, [isMusicActive, status, forceSpeak]);
+  }, [isMuted, isMusicActive, status, forceSpeak, setMuteState]);
 
   useClapDetector({ onClap: handleClapDetected, isBusyRef, onError: addLog });
 
@@ -54,8 +120,8 @@ function App() {
   // Uniform scale to prevent stretching (perfect circles) while filling the screen
   useEffect(() => {
     const handleResize = () => {
-      // Find the most constrained dimension compared to 1080p to scale safely
-      const s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+      // Find the most constrained dimension, but CAP at 1.0 to prevent blurry upscaling on 2K/4K monitors
+      const s = Math.min(1, Math.min(window.innerWidth / 1600, window.innerHeight / 900));
       setScale(s);
     };
     handleResize();
@@ -101,6 +167,8 @@ function App() {
 
   return (
     <div className="jarvis-container">
+      <GlobalLoader />
+      
       {/* HUD Aesthetic Layers */}
       <div className="tactical-grid" />
       <div className="hud-corner top-left" />
@@ -114,17 +182,29 @@ function App() {
         onSave={updateConfig}
       />
 
+      {/* FULL SCREEN BACKGROUND CORE */}
+      {activeTheme === 'CyberNeon' ? <VoiceCore_CyberNeon state={status} /> : <VoiceCore state={status} />}
+
       {/* FULL SCREEN HUD LAYOUT - CORNER ANCHORED */}
       
-      {/* TOP LEFT ANCHOR */}
-      <div className="hud-layer" style={{ transformOrigin: 'top left', transform: `scale(${scale})` }}>
-        <ShortcutsWidget onAction={sounds.click} />
-        <MusicWidget isActive={isMusicActive} onClose={() => setIsMusicActive(false)} />
+      {/* TOP CENTER ANCHOR */}
+      <div className="hud-layer" style={{ transformOrigin: 'top center', transform: `scale(${scale})` }}>
+        <LogoWidget />
       </div>
 
-      {/* LEFT CENTER ANCHOR */}
+      <div className="hud-layer" style={{ transformOrigin: 'top left', transform: `scale(${scale})` }}>
+        <SuitWidget />
+        <ShortcutsWidget onAction={sounds.click} />
+      </div>
+
+      {/* LEFT CENTER ANCHOR (SysStats + Music) */}
       <div className="hud-layer" style={{ transformOrigin: 'left center', transform: `scale(${scale})` }}>
         <SysStatsWidget />
+        <MusicWidget isActive={isMusicActive} onToggle={() => {
+            const nextState = !isMusicActive;
+            setIsMusicActive(nextState);
+            setMuteState(nextState); // Mutes when playing, unmutes when stopped
+        }} />
       </div>
 
       {/* TOP RIGHT ANCHOR */}
@@ -134,21 +214,21 @@ function App() {
         <WebcamWidget isActive={isWebcamActive} />
       </div>
 
+
+
       {/* BOTTOM RIGHT ANCHOR */}
       <div className="hud-layer" style={{ transformOrigin: 'bottom right', transform: `scale(${scale})` }}>
-        <div className="console-portal">
-           <ConsoleLog logs={logs || []} />
+        <div className="bottom-right-container">
+           <AudioVisualizerWidget isMuted={isMuted} />
+           <div className="console-portal">
+              <ConsoleLog logs={logs || []} />
+           </div>
         </div>
       </div>
 
-      {/* CENTER VIEWPORT ANCHOR */}
-      <div className="hud-layer" style={{ transformOrigin: 'center center', transform: `scale(${scale})` }}>
+      {/* BOTTOM CENTER VIEWPORT ANCHOR */}
+      <div className="hud-layer" style={{ transformOrigin: 'bottom center', transform: `scale(${scale})` }}>
         <div className="core-viewport">
-          
-          <div className="orb-anchor">
-             <JarvisOrb state={status} />
-          </div>
-
           {/* Status Indicators */}
           <div className="status-plate">
             <div className="title-neon text-emerald">
@@ -197,6 +277,11 @@ function App() {
         </div>
       </div>
 
+      {/* HOLOGRAM LAYER - TOPMOST TO PREVENT TOOLTIP CLIPPING */}
+      <div className="hud-layer" style={{ transformOrigin: 'left center', transform: `scale(${scale})`, zIndex: 1000 }}>
+        <HoloModelWidget />
+      </div>
+
       <style jsx="true">{`
         /* FULL EDGE-TO-EDGE CANVAS */
         .jarvis-container {
@@ -222,29 +307,29 @@ function App() {
           pointer-events: auto;
         }
 
-        .console-portal {
+        .bottom-right-container {
           position: absolute;
           right: 40px;
           bottom: 40px;
+          display: flex;
+          align-items: flex-end;
+          gap: 20px;
           animation: slideUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        .console-portal {
+           /* Inherit position from flex container */
         }
         .core-viewport {
           position: absolute;
-          top: 50%; left: 50%;
-          transform: translate(-50%, -50%);
+          bottom: 10px; 
+          left: 50%;
+          transform: translateX(-50%);
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 10px;
+          gap: 15px;
           pointer-events: none;
           z-index: 100;
-        }
-        .orb-anchor { 
-          pointer-events: none;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          min-height: 400px;
         }
         .status-plate {
           display: flex;

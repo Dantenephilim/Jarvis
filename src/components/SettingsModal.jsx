@@ -8,6 +8,7 @@ const SettingsModal = ({ isOpen, onClose, onSave }) => {
     const [voiceId, setVoiceId] = useState('');
     const [testStatus, setTestStatus] = useState(''); // 'testing', 'success', 'error'
     const [testMessage, setTestMessage] = useState('');
+    const [theme, setTheme] = useState('VoiceCore');
 
     const DEFAULT_N8N_URL = 'https://n8n.nexotechx.com/webhook/1faaf855-bd93-4b57-a298-8bdd00e419da';
     const DEFAULT_VOICE_ID = 'DMyrgzQFny3JI1Y1paM5'; // Default Jarvis
@@ -36,6 +37,10 @@ const SettingsModal = ({ isOpen, onClose, onSave }) => {
             setVoiceId(DEFAULT_VOICE_ID);
         }
         
+        const storedTheme = localStorage.getItem('jarvis_theme');
+        if (storedTheme) setTheme(storedTheme);
+        else setTheme('VoiceCore');
+
         setTestStatus('');
         setTestMessage('');
     }, [isOpen]);
@@ -44,7 +49,8 @@ const SettingsModal = ({ isOpen, onClose, onSave }) => {
         localStorage.setItem('eleven_agent_id', agentId);
         localStorage.setItem('n8n_webhook_url', n8nUrl);
         localStorage.setItem('eleven_voice_id', voiceId);
-        onSave({ agentId, n8nUrl, voiceId });
+        localStorage.setItem('jarvis_theme', theme);
+        onSave({ agentId, n8nUrl, voiceId, theme });
         onClose();
     };
 
@@ -161,6 +167,19 @@ const SettingsModal = ({ isOpen, onClose, onSave }) => {
                             </div>
                         )}
                         <small className="hint">Production Webhook URL for logic processing</small>
+                    </div>
+
+                    <div className="input-group" style={{ marginTop: '20px' }}>
+                        <label className="text-emerald">CORE VISUAL STYLE</label>
+                        <select 
+                            value={theme} 
+                            onChange={(e) => setTheme(e.target.value)}
+                            className="cyber-input"
+                        >
+                            <option value="VoiceCore">VoiceCore (Default)</option>
+                            <option value="CyberNeon">CyberNeon (Backup)</option>
+                        </select>
+                        <small className="hint">Select the 3D aesthetic of the main core.</small>
                     </div>
                 </div>
 

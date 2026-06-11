@@ -12,9 +12,13 @@
   "dependencies": {
     "@11labs/react": "^0.2.0",
     "@elevenlabs/client": "^0.14.0",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.6.1",
     "lucide-react": "^0.564.0",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "three": "^0.184.0",
+    "three-mesh-bvh": "^0.9.10"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

@@ -51,18 +51,24 @@ const WebcamWidget = ({ isActive }) => {
         };
     }, [isActive]);
 
-    if (!isActive) return null;
+    // Removed early return so the widget frame always renders
+    // if (!isActive) return null;
 
     return (
         <div className="webcam-container">
             <div className="webcam-header">
-                <Camera size={12} className="text-cyan" />
-                <span className="label">OPTICAL SENSOR</span>
+                <Camera size={12} className={isActive ? "text-cyan" : "text-gray"} style={{ opacity: isActive ? 1 : 0.5 }} />
+                <span className="label" style={{ opacity: isActive ? 1 : 0.5 }}>OPTICAL SENSOR</span>
                 <div className={`pulse-dot ${isStreaming ? 'active' : ''}`} />
             </div>
 
             <div className="webcam-feed-wrapper">
-                {hasError ? (
+                {!isActive ? (
+                    <div className="webcam-error" style={{ color: '#888', border: '1px dashed rgba(255,255,255,0.1)' }}>
+                        <Camera size={32} style={{ opacity: 0.3 }} />
+                        <span style={{ opacity: 0.5 }}>SENSOR OFFLINE</span>
+                    </div>
+                ) : hasError ? (
                     <div className="webcam-error">
                         <AlertCircle size={32} />
                         <span>CAMERA ACCESS DENIED</span>
@@ -74,6 +80,7 @@ const WebcamWidget = ({ isActive }) => {
                         playsInline 
                         muted 
                         className="webcam-video"
+                        style={{ opacity: isStreaming ? 1 : 0 }}
                     />
                 )}
                 <div className="crosshair-overlay"></div>
@@ -82,7 +89,7 @@ const WebcamWidget = ({ isActive }) => {
             <style jsx="true">{`
                 .webcam-container {
                     position: absolute;
-                    top: 350px;
+                    top: 390px;
                     right: 40px;
                     width: 260px;
                     background: rgba(0, 5, 10, 0.6);

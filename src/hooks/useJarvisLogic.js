@@ -1,11 +1,18 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 
+// Global audio context for Jarvis's voice output
+let sharedAudioCtx = null;
+let sharedAnalyser = null;
+
+export const getJarvisAnalyser = () => sharedAnalyser;
+
 export const useJarvisLogic = () => {
-    const DEFAULT_N8N_URL = "/api/webhook/1faaf855-bd93-4b57-a298-8bdd00e419da";
+    const envWebhook = import.meta.env.VITE_N8N_WEBHOOK_URL;
+    const DEFAULT_N8N_URL = envWebhook ? envWebhook : "/api/webhook/1faaf855-bd93-4b57-a298-8bdd00e419da";
 
     // Normalize: if stored URL is any full nexotechx URL, use the Vite proxy path instead
     const normalizeN8nUrl = (url) => {
-        if (!url) return DEFAULT_N8N_URL;
+        if (!url) return normalizeN8nUrl(DEFAULT_N8N_URL);
         if (url.includes('nexotechx.com')) {
             try {
                 const parsedUrl = new URL(url);
@@ -33,6 +40,7 @@ export const useJarvisLogic = () => {
     const [status, setStatus] = useState('idle');
     const [transcript, setTranscript] = useState('SYSTEM ONLINE. WAITING FOR COMMAND.');
     const [logs, setLogs] = useState(getInitialLogs);
+    const [activeTheme, setActiveTheme] = useState(() => localStorage.getItem('jarvis_theme') || 'VoiceCore');
 
     const addLog = (text) => {
         setLogs(prev => {
@@ -50,7 +58,7 @@ export const useJarvisLogic = () => {
     const recognitionRef = useRef(null);
     const audioRef = useRef(null);
 
-    const [isMuted, setIsMuted] = useState(false);
+    const [isMuted, setIsMuted] = useState(true);
 
     const isMutedRef = useRef(isMuted);
     const statusRef = useRef(status);
@@ -317,10 +325,34 @@ export const useJarvisLogic = () => {
     const playAudio = (audioUrl) => {
         setStatus('speaking');
 
-        if (audioRef.current) audioRef.current.pause();
+        if (audioRef.current) {
+            audioRef.current.pause();
+        }
 
         const audio = new Audio(audioUrl);
+        audio.crossOrigin = "anonymous";
         audioRef.current = audio;
+
+        // Route audio through Web Audio API to extract frequency data for visualizer
+        try {
+            if (!sharedAudioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                sharedAudioCtx = new AudioContext();
+                sharedAnalyser = sharedAudioCtx.createAnalyser();
+                sharedAnalyser.fftSize = 256;
+                sharedAnalyser.smoothingTimeConstant = 0.5;
+            }
+
+            if (sharedAudioCtx.state === 'suspended') {
+                sharedAudioCtx.resume().catch(() => {});
+            }
+
+            const source = sharedAudioCtx.createMediaElementSource(audio);
+            source.connect(sharedAnalyser);
+            sharedAnalyser.connect(sharedAudioCtx.destination);
+        } catch (e) {
+            console.warn("Could not hook audio context for visualizer", e);
+        }
 
         audio.onended = () => {
             setStatus('idle');
@@ -364,14 +396,23 @@ export const useJarvisLogic = () => {
         });
     }, []);
 
+    const setMuteState = (newState) => {
+        setIsMuted(newState);
+        isMutedRef.current = newState;
+    };
+
     const sendTextMessage = useCallback((text) => {
         if (!text.trim()) return;
         addLog(`USER: ${text}`);
         enviarAJarvis(text);
     }, [n8nUrl]);
 
-    const updateConfig = ({ n8nUrl: newUrl }) => {
+    const updateConfig = ({ n8nUrl: newUrl, theme }) => {
         if (newUrl !== undefined) setN8nUrl(normalizeN8nUrl(newUrl));
+        if (theme !== undefined) {
+            localStorage.setItem('jarvis_theme', theme);
+            setActiveTheme(theme);
+        }
     };
 
     // Stable identities for callbacks consumed by external hooks (e.g. useClapDetector).
@@ -393,10 +434,12 @@ export const useJarvisLogic = () => {
         logs,
         isMuted,
         toggleMute,
+        setMuteState,
         sendTextMessage,
         updateConfig,
         isConnected: true,
         forceSpeak,
-        addLog: stableAddLog
+        addLog: stableAddLog,
+        activeTheme
     };
 };
