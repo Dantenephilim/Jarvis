@@ -17,6 +17,10 @@ const AudioVisualizerWidget = ({ isMuted }) => {
 
     const startVisualizer = async () => {
       try {
+        if (!navigator?.mediaDevices?.getUserMedia) {
+          if (mounted) setError(true);
+          return;
+        }
         stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         if (!mounted) {
           stream.getTracks().forEach(t => t.stop());

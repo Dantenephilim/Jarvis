@@ -2,9 +2,10 @@ import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { useGLTF, Center, Bvh, Html } from '@react-three/drei';
 import * as THREE from 'three';
+import ironManModel from '../assets/iron_man.glb';
 
 const IronManModel = () => {
-  const { scene } = useGLTF('/src/assets/iron_man.glb');
+  const { scene } = useGLTF(ironManModel);
   const groupRef = useRef();
 
   const [isDragging, setIsDragging] = useState(false);
@@ -252,4 +253,4 @@ const HoloModelWidget = () => {
 export default HoloModelWidget;
 
 // Preload the 3D model into cache so it loads instantly when the app starts
-useGLTF.preload('/src/assets/iron_man.glb');
+useGLTF.preload(ironManModel);

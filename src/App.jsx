@@ -34,25 +34,30 @@ const GlobalLoader = ({ onReady }) => {
     return () => clearInterval(dotInterval);
   }, []);
 
+  // Safety timer so loader NEVER hangs if 3D assets load instantly or take time
+  useEffect(() => {
+    const safetyTimer = setTimeout(() => {
+      setDisplayedProgress(100);
+    }, 2500);
+    return () => clearTimeout(safetyTimer);
+  }, []);
+
   // Smooth progress calculation
   useEffect(() => {
     let interval = setInterval(() => {
         setDisplayedProgress(prev => {
             if (prev >= 100) return 100;
             
-            const isDone = !active && progress === 100;
-            const target = isDone ? 100 : Math.max(progress * 0.9, prev);
+            const isDone = !active;
+            const target = isDone ? 100 : Math.max(progress, prev + 2);
             
             if (isDone) {
-                // If model is loaded, climb at a steady cinematic pace
-                // 1.25 per 50ms = 25 per second. Reaches 100 in 4 seconds.
-                return Math.min(100, prev + 1.25);
+                return Math.min(100, prev + 5);
             } else {
-                // Chase target smoothly
-                return prev + (target - prev) * 0.1;
+                return Math.min(99, prev + (target - prev) * 0.2 + 1);
             }
         });
-    }, 50);
+    }, 40);
     return () => clearInterval(interval);
   }, [active, progress]);
 

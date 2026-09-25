@@ -26,6 +26,7 @@ const localTerminalPlugin = () => ({
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react(), localTerminalPlugin()],
+  assetsInclude: ['**/*.glb', '**/*.gltf', '**/*.mp3', '**/*.mp4', '**/*.png', '**/*.svg'],
   server: {
     proxy: {
       '/api/webhook': {

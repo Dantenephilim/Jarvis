@@ -13,6 +13,11 @@ const WebcamWidget = ({ isActive }) => {
         const startCamera = async () => {
             try {
                 setHasError(false);
+                if (!navigator?.mediaDevices?.getUserMedia) {
+                    setHasError(true);
+                    setIsStreaming(false);
+                    return;
+                }
                 stream = await navigator.mediaDevices.getUserMedia({ 
                     video: { 
                         width: { ideal: 640 },

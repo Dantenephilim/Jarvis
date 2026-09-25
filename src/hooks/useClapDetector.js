@@ -48,6 +48,10 @@ export const useClapDetector = ({ onClap, isBusyRef, onError } = {}) => {
 
         const startListening = async () => {
             try {
+                if (!navigator?.mediaDevices?.getUserMedia) {
+                    setIsListening(false);
+                    return;
+                }
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 if (!mounted) {
                     stream.getTracks().forEach(t => t.stop());
