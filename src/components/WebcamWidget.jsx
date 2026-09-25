@@ -1,9 +1,16 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Camera, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { Camera, AlertCircle, Eye, EyeOff, ShieldAlert } from 'lucide-react';
+
+const isTailscaleConnection = () => {
+    const host = window.location.hostname;
+    // Tailscale MagicDNS (.ts.net), Tailscale CGNAT IPs (100.x.y.z), localhost or HTTPS
+    return host.endsWith('.ts.net') || host.startsWith('100.') || host === 'localhost' || host === '127.0.0.1';
+};
 
 const WebcamWidget = ({ isActive }) => {
     const videoRef = useRef(null);
     const [hasError, setHasError] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
     const [isStreaming, setIsStreaming] = useState(false);
     const [realColor, setRealColor] = useState(false);
 
@@ -13,11 +20,23 @@ const WebcamWidget = ({ isActive }) => {
         const startCamera = async () => {
             try {
                 setHasError(false);
-                if (!navigator?.mediaDevices?.getUserMedia) {
+                setErrorMessage('');
+
+                // Enforce Tailscale connection requirement
+                if (!isTailscaleConnection()) {
                     setHasError(true);
+                    setErrorMessage('TAILSCALE LINK REQUIRED');
                     setIsStreaming(false);
                     return;
                 }
+
+                if (!navigator?.mediaDevices?.getUserMedia) {
+                    setHasError(true);
+                    setErrorMessage('HTTPS / TAILSCALE REQUIRED');
+                    setIsStreaming(false);
+                    return;
+                }
+
                 stream = await navigator.mediaDevices.getUserMedia({ 
                     video: { 
                         width: { ideal: 640 },
@@ -32,6 +51,7 @@ const WebcamWidget = ({ isActive }) => {
             } catch (err) {
                 console.error("Error accessing webcam:", err);
                 setHasError(true);
+                setErrorMessage('CAMERA ACCESS DENIED');
                 setIsStreaming(false);
             }
         };
@@ -90,7 +110,7 @@ const WebcamWidget = ({ isActive }) => {
                 ) : hasError ? (
                     <div className="webcam-error">
                         <AlertCircle size={32} />
-                        <span>CAMERA ACCESS DENIED</span>
+                        <span>{errorMessage || 'CAMERA ACCESS DENIED'}</span>
                     </div>
                 ) : (
                     <video 

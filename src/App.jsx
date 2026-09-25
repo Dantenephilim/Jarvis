@@ -222,16 +222,16 @@ function App() {
         <LogoWidget />
       </div>
 
-      {/* TOP LEFT ANCHOR (3D Hologram Armor + Shortcuts) */}
-      <div className="hud-layer" style={{ transformOrigin: 'top left', transform: `scale(${scale})`, zIndex: 100 }}>
+      {/* TOP LEFT ANCHOR (Sphere Suit + Shortcuts) */}
+      <div className="hud-layer" style={{ transformOrigin: 'top left', transform: `scale(${scale})`, zIndex: 50 }}>
         <div className={`hud-anim-wrapper ${isAppReady ? 'anim-slide-right' : 'hud-hidden'}`}>
-          <HoloModelWidget />
+          <SuitWidget />
           <ShortcutsWidget onAction={sounds.click} />
         </div>
       </div>
 
       {/* LEFT CENTER ANCHOR (SysStats + Music) */}
-      <div className="hud-layer" style={{ transformOrigin: 'left center', transform: `scale(${scale})` }}>
+      <div className="hud-layer" style={{ transformOrigin: 'top left', transform: `scale(${scale})`, zIndex: 40 }}>
         <div className={`hud-anim-wrapper ${isAppReady ? 'anim-slide-right-delayed' : 'hud-hidden'}`}>
           <MusicWidget isActive={isMusicActive} onToggle={() => {
               const nextState = !isMusicActive;
@@ -239,6 +239,13 @@ function App() {
               setMuteState(nextState); // Mutes when playing, unmutes when stopped
           }} />
           <SysStatsWidget />
+        </div>
+      </div>
+
+      {/* BOTTOM LEFT ANCHOR (3D Hologram Armor) */}
+      <div className="hud-layer" style={{ transformOrigin: 'bottom left', transform: `scale(${scale})`, zIndex: 100 }}>
+        <div className={`hud-anim-wrapper ${isAppReady ? 'anim-slide-right' : 'hud-hidden'}`}>
+          <HoloModelWidget />
         </div>
       </div>
 

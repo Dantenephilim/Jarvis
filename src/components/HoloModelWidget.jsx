@@ -186,9 +186,9 @@ const IronManModel = () => {
       onPointerUp={handlePointerUp}
       onPointerOut={(e) => { handlePointerOut(e); handlePointerUp(e); }}
       onPointerOver={handlePointerOver}
-      scale={0.0105} 
+      scale={0.012} 
     >
-      <Center>
+      <Center position={[0, 0.2, 0]}>
         <Bvh firstHitOnly>
           <primitive object={scene} />
         </Bvh>
@@ -206,7 +206,7 @@ const IronManModel = () => {
               <circle cx="30" cy="0" r="2" fill="#00f3ff" />
             </svg>
 
-            {/* The text box anchored at the end of the line (up and to the right) */}
+            {/* The text box anchored at the end of the line */}
             <div style={{ 
               position: 'absolute', 
               left: '30px', 
@@ -236,13 +236,9 @@ const IronManModel = () => {
 const HoloModelWidget = () => {
   return (
     <div className="holo-model-container">
-      <div className="holo-model-header">
-        <span className="holo-title">MARK LXXXV // HOLO TACTICAL</span>
-        <span className="holo-status">ONLINE</span>
-      </div>
       <div className="holo-canvas-wrapper">
         <Canvas 
-          camera={{ position: [0, 0, 7.0], fov: 45 }} 
+          camera={{ position: [0, 0, 7.2], fov: 45 }} 
           style={{ width: '100%', height: '100%' }}
         >
           <ambientLight intensity={0.6} />
@@ -257,44 +253,15 @@ const HoloModelWidget = () => {
       <style jsx="true">{`
         .holo-model-container {
           position: absolute;
-          top: 20px;
+          bottom: 35px;
           left: 30px;
-          width: 220px;
-          height: 310px;
-          background: rgba(0, 5, 12, 0.65);
-          border: 1px solid rgba(0, 243, 255, 0.25);
-          border-left: 3px solid rgba(0, 243, 255, 0.8);
-          backdrop-filter: blur(8px);
-          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
-          border-radius: 4px;
-          display: flex;
-          flex-direction: column;
-          overflow: hidden;
-          z-index: 20;
+          width: 280px;
+          height: 360px;
+          overflow: visible;
+          z-index: 25;
           pointer-events: auto;
         }
-        .holo-model-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 6px 10px;
-          background: rgba(0, 243, 255, 0.08);
-          border-bottom: 1px solid rgba(0, 243, 255, 0.15);
-          font-family: var(--font-main, monospace);
-        }
-        .holo-title {
-          font-size: 0.58rem;
-          color: var(--primary-glow, #00f3ff);
-          letter-spacing: 1.5px;
-          font-weight: bold;
-        }
-        .holo-status {
-          font-size: 0.52rem;
-          color: #00ffaa;
-          letter-spacing: 1px;
-        }
         .holo-canvas-wrapper {
-          flex: 1;
           width: 100%;
           height: 100%;
           position: relative;

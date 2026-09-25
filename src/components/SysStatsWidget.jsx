@@ -102,7 +102,7 @@ const SysStatsWidget = () => {
         <div style={{
             position: 'absolute',
             left: '30px',
-            top: '630px',
+            top: '460px',
             display: 'flex',
             flexDirection: 'column',
             gap: '15px',
