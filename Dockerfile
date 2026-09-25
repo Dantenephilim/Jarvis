@@ -5,6 +5,15 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# Build arguments for Vite environment variables
+ARG VITE_N8N_WEBHOOK_URL
+ARG VITE_ELEVENLABS_API_KEY
+ARG VITE_ELEVENLABS_VOICE_ID
+
+ENV VITE_N8N_WEBHOOK_URL=$VITE_N8N_WEBHOOK_URL
+ENV VITE_ELEVENLABS_API_KEY=$VITE_ELEVENLABS_API_KEY
+ENV VITE_ELEVENLABS_VOICE_ID=$VITE_ELEVENLABS_VOICE_ID
+
 # Install deps first (cache layer)
 COPY package.json package-lock.json ./
 RUN npm ci

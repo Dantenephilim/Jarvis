@@ -1,244 +1,158 @@
 # J.A.R.V.I.S. — Tactical AI Interface
 
-Interface de control de voz e IA construida con React + Vite, conectada a n8n y ElevenLabs.
+Interface táctica de control por voz e inteligencia artificial construida con React + Vite + Three.js, conectada a workflows de n8n y síntesis de voz de ElevenLabs.
+
+![J.A.R.V.I.S. Banner](public/logo.png)
 
 ---
 
-## ⚙️ Requisitos previos
+## ⚡ Despliegue Rápido con Docker (Cualquier PC / Servidor)
 
-| Herramienta | Versión mínima | Notar |
+Puedes levantar J.A.R.V.I.S. en cualquier computadora (Linux, Kali Linux, Ubuntu, Windows con Docker Desktop, macOS, Raspberry Pi, etc.) en **3 simples pasos**:
+
+### 1. Clonar el repositorio
+```bash
+git clone https://github.com/Dantenephilim/Jarvis.git
+cd Jarvis
+```
+
+### 2. Configurar variables de entorno (Opcional)
+```bash
+cp .env.example .env
+```
+*Si no configuras claves en el archivo `.env`, puedes ingresarlas directamente en el panel de configuración de la interfaz web (icono de engranaje).*
+
+### 3. Levantar con Docker Compose
+
+- **En Linux / Kali / macOS:**
+  ```bash
+  chmod +x docker-start.sh docker-stop.sh
+  ./docker-start.sh
+  ```
+  *(O directamente: `docker compose up --build -d`)*
+
+- **En Windows:**
+  Haz doble clic en `docker-start.bat` o ejecuta:
+  ```powershell
+  docker compose up --build -d
+  ```
+
+🎉 **¡Listo!** Abre tu navegador en: **[http://localhost](http://localhost)**
+
+---
+
+## 🛑 Detener Contenedores
+
+- **En Linux / macOS:** `./docker-stop.sh` o `docker compose down`
+- **En Windows:** Haz doble clic en `docker-stop.bat` o `docker compose down`
+
+---
+
+## 🎙️ Permisos de Micrófono y Reconocimiento de Voz
+
+El reconocimiento de voz utiliza la **Web Speech API** nativa de Chromium (Google Chrome, Microsoft Edge, Brave, Opera).
+
+> [!IMPORTANT]
+> **Contexto Seguro Requerido**:
+> - **Acceso local (`http://localhost` o `http://127.0.0.1`):** El navegador permite el micrófono automáticamente.
+> - **Acceso desde otra PC en la misma red local (ej: `http://192.168.1.100`):** Los navegadores bloquean el micrófono en conexiones HTTP no locales.
+
+### ¿Cómo usar el micrófono si accedes por IP en la red local?
+
+1. **Opción A (Recomendada para pruebas rápidas sin SSL):**
+   En el navegador de la PC cliente (la que abre la interfaz), ingresa en la barra de direcciones:
+   ```text
+   chrome://flags/#unsafely-treat-insecure-origin-as-secure
+   ```
+   - Habilita la opción (**Enabled**).
+   - Escribe la URL de tu servidor: `http://IP_DE_TU_PC:PUERTO` (ej: `http://192.168.1.100`).
+   - Reinicia el navegador.
+
+2. **Opción B (Túnel HTTPS Gratuito):**
+   Usa [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/) o `ngrok` para exponer el puerto 80 con un dominio HTTPS seguro:
+   ```bash
+   cloudflared tunnel --url http://localhost:80
+   ```
+
+---
+
+## ⚙️ Variables de Entorno (`.env`)
+
+| Variable | Descripción | Valor por Defecto |
 |---|---|---|
-| **Node.js** | v18+ | [nodejs.org](https://nodejs.org) |
-| **npm** | v9+ | Viene con Node.js |
-| **Cuenta ElevenLabs** | — | Para texto a voz |
-| **n8n corriendo** | — | Para procesar comandos de voz |
-| **Chromium/Edge** | — | El mic usa Web Speech API (no funciona en Firefox) |
+| `JARVIS_PORT` | Puerto expuesto en la máquina host | `80` |
+| `VITE_N8N_WEBHOOK_URL` | URL del Webhook de producción de n8n | `https://n8n.nexotechx.com/webhook/...` |
+| `VITE_ELEVENLABS_API_KEY` | API Key de ElevenLabs para TTS | *(Opcional, configurable en UI)* |
+| `VITE_ELEVENLABS_VOICE_ID` | ID de la voz para síntesis | `DMyrgzQFny3JI1Y1paM5` (Jarvis) |
 
 ---
 
-## 🚀 Levantar el servidor
+## 🛠️ Desarrollo Local (Sin Docker)
 
-### 1. Instalar dependencias (primera vez)
+Si deseas ejecutar el proyecto en modo desarrollo con recarga en caliente:
+
+### Requisitos:
+- **Node.js**: v18 o superior
+- **npm**: v9 o superior
 
 ```bash
-cd C:\tu_location\Jarvis
+# 1. Instalar dependencias
 npm install
-```
 
-### 2. Configurar variables de entorno
+# 2. Configurar .env
+cp .env.example .env
 
-Edita el archivo `.env` en la raíz del proyecto:
-
-```env
-# URL del webhook de n8n (el proxy de Vite lo redirige automáticamente)
-VITE_N8N_WEBHOOK_URL=https://nexotechx.com/webhook/production_link
-
-# API Key de ElevenLabs (text-to-speech)
-VITE_ELEVENLABS_API_KEY=tu_api_key_aqui
-
-# Voice ID de ElevenLabs (el ID de la voz que usa Jarvis)
-VITE_ELEVENLABS_VOICE_ID=tu_api_key_aqui
-```
-
-> **Importante:** El archivo `.env` nunca se sube a Git (está en `.gitignore`). Si clonás el repo de cero, tenés que crearlo manualmente.
-
-### 3. Levantar en modo desarrollo
-
-```bash
+# 3. Iniciar servidor de desarrollo
 npm run dev
 ```
 
-Jarvis queda disponible en: **http://localhost:5173**
-
-### 4. Lanzador rápido (Windows)
-
-Si estás en Windows, puedes simplemente hacer doble clic en el archivo:
-`start-jarvis.bat`
-
-Este script:
-- Verifica si tienes el archivo `.env`.
-- Instala las dependencias si es la primera vez (`npm install`).
-- Inicia el servidor de desarrollo (`npm run dev`).
-- Abre automáticamente tu navegador en la dirección correcta.
+Jarvis quedará disponible en: **http://localhost:5173**
 
 ---
 
-## 🔌 Cómo funciona el proxy de n8n
+## 🐳 Arquitectura Docker Multi-Contenedor
 
-Vite actúa como proxy inverso para evitar errores de CORS. Cualquier request a `/api/webhook/*` se redirige automáticamente a `https://n8n.nexotechx.com/webhook/*`.
+El despliegue con Docker Compose orquesta dos servicios en una red privada aislada:
 
-Esto significa que **n8n tiene que estar corriendo y accesible** en `n8n.nexotechx.com` para que Jarvis procese comandos.
-
-Puedes verificar la conexión con:
-
-```bash
-node test_connection.js
 ```
+                  ┌─────────────────────────────────────────┐
+                  │                 CLIENT                  │
+                  │   Browser (Chrome / Edge / Chromium)    │
+                  └────────────────────┬────────────────────┘
+                                       │ HTTP :80
+                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Docker Network: jarvis-net                                                  │
+│                                                                             │
+│   ┌────────────────────────────────┐       ┌──────────────────────────────┐ │
+│   │           jarvis-app           │       │         jarvis-stats         │ │
+│   │         (Nginx Alpine)         │       │        (Node Express)        │ │
+│   │  - Sirve SPA React compilada   │       │  - Lee CPU/RAM del Host      │ │
+│   │  - Proxy /api/webhook → n8n    │──────▶│    vía /proc o fallback OS   │ │
+│   │  - Proxy /api/system-stats ────┼──────▶│  - Expone /stats en :3001    │ │
+│   └────────────────────────────────┘       └──────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+1. **`jarvis-app`**:
+   - Compilación multi-stage con `node:20-alpine` y servidor `nginx:alpine`.
+   - Proxy inverso Nginx para llamadas de webhook hacia n8n (evita problemas de CORS).
+   - Enrutamiento SPA con fallback a `index.html`.
+
+2. **`jarvis-stats`**:
+   - Microservicio Express ligero que monitorea CPU, núcleos y uso de RAM en tiempo real.
+   - Monta `/proc` en modo solo lectura en Linux/Kali para estadísticas reales del host con fallback automático a la API de Node.js en Windows/macOS.
 
 ---
 
-## 📡 APIs utilizadas
+## 📡 APIs y Servicios Integrados
 
-### ElevenLabs (Text-to-Speech)
-- **Modelo:** `eleven_turbo_v2_5`
-- **Endpoint:** `https://api.elevenlabs.io/v1/text-to-speech/{voiceId}`
-- Fallback automático al TTS del browser si la API key no está configurada.
-
-### Web Speech API (Speech-to-Text)
-- Nativa del browser (Chrome/Edge).
-- Idioma configurado: `es-ES`
-- **No funciona en Firefox ni en HTTP puro** (requiere localhost o HTTPS).
-
-### n8n Webhook
-- Recibe el texto transcripto del micrófono.
-- Devuelve la respuesta de Jarvis (JSON con campo `output`, `response`, o `text`).
+- **ElevenLabs (Text-to-Speech)**: Modelo turbo ultra-rápido de baja latencia para respuestas de voz realistas. Fallback automático a síntesis de voz del navegador si no hay clave configurada.
+- **n8n Automation**: Procesamiento de lenguaje natural y ejecución de flujos de trabajo inteligentes.
+- **Three.js & React Three Fiber**: Núcleo holográfico interactivo renderizado en 3D en tiempo real con reactividad al audio.
 
 ---
 
-## 🌐 Endpoints locales del servidor de Vite
+## 📄 Licencia
 
-Vite expone dos endpoints internos para el sistema:
-
-| Endpoint | Descripción |
-|---|---|
-| `GET /api/system-stats` | CPU, RAM y núcleos del sistema |
-| `GET /api/spawn-cmd` | Abre una ventana de `cmd.exe` |
-
----
-
-## 🐳 Desplegar en Docker (Kali Linux)
-
-### Estructura de archivos Docker
-
-```
-Jarvis/
-├── Dockerfile               # Build multi-stage: Node → Nginx
-├── docker-compose.yml       # Orquesta app + stats server
-├── .dockerignore
-├── .env                     # Variables secretas (no subir a Git)
-├── nginx/
-│   └── nginx.conf           # Proxy n8n + stats + SPA fallback
-└── stats-server/
-    ├── Dockerfile
-    ├── package.json
-    └── index.js             # Lee /proc del host para CPU/RAM reales
-```
-
-### Paso a paso en Kali
-
-**1. Copiar el proyecto a Kali**
-```bash
-# Desde Windows, copiar a Kali vía SCP o montar OneDrive
-scp -r /mnt/c/Users/Dante/OneDrive/Proyects/Jarvis user@kali-ip:~/jarvis
-```
-
-**2. Configurar variables de entorno**
-```bash
-cd ~/jarvis
-cp .env.example .env
-nano .env   # Rellenar API keys reales
-```
-
-**3. Construir y levantar**
-```bash
-docker compose up --build -d
-```
-
-Jarvis queda disponible en: **http://localhost** (puerto 80)
-
-**4. Ver logs en tiempo real**
-```bash
-docker compose logs -f
-```
-
-**5. Detener**
-```bash
-docker compose down
-```
-
-### ⚠️ Web Speech API y HTTPS
-
-La API del micrófono del browser **requiere HTTPS o localhost**. Si accedés desde otro dispositivo de la red (ej: `http://192.168.x.x`) el micrófono **no funcionará**.
-
-Solución rápida con un certificado autofirmado en Kali:
-
-```bash
-# Generar cert autofirmado
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-  -keyout nginx/ssl/key.pem \
-  -out nginx/ssl/cert.pem \
-  -subj "/CN=jarvis.local"
-
-# Agregar al nginx.conf:
-# listen 443 ssl;
-# ssl_certificate     /etc/nginx/ssl/cert.pem;
-# ssl_certificate_key /etc/nginx/ssl/key.pem;
-```
-
-O usar un proxy como **Caddy** o **Cloudflare Tunnel** para HTTPS automático.
-
-### 📊 Cómo funcionan las stats en Docker
-
-El contenedor `jarvis-stats` monta `/proc` del host de Kali como solo-lectura:
-```yaml
-volumes:
-  - /proc:/host/proc:ro
-```
-Así lee CPU y RAM **reales del host**, no del contenedor.
-
----
-
-## 🏗️ Estructura del proyecto
-
-```
-Jarvis/
-├── .env                      # Variables de entorno (no subir a Git)
-├── vite.config.js            # Config de Vite + proxy n8n + endpoints locales
-├── package.json              # Dependencias
-├── test_connection.js        # Script para testear conexión con n8n
-└── src/
-    ├── App.jsx               # Componente raíz
-    ├── hooks/
-    │   └── useJarvisLogic.js # Toda la lógica: mic, TTS, n8n, estado
-    └── components/
-        ├── JarvisOrb.jsx     # Orbe central animado
-        ├── ConsoleLog.jsx    # Log de comandos del sistema
-        ├── WeatherWidget.jsx # Clima en tiempo real
-        ├── SysStatsWidget.jsx# CPU / RAM en tiempo real
-        ├── ShortcutsWidget.jsx# Accesos rápidos
-        ├── SystemWidgets.jsx # Contenedor de widgets
-        ├── SettingsModal.jsx # Modal de configuración
-        └── DateTimeWidget.jsx# Hora y fecha
-```
-
----
-
-## 🛠️ Comandos disponibles
-
-```bash
-npm run dev       # Levanta el servidor de desarrollo en localhost:5173
-npm run build     # Genera el build de producción en /dist
-npm run preview   # Sirve el build de /dist localmente
-npm run lint      # Corre ESLint
-```
-
----
-
-## 🎙️ Permisos del micrófono
-
-Chrome/Edge pedirán permiso de micrófono la primera vez. Si el mic se bloquea:
-
-1. Hacé click en el **ícono de candado** en la barra de direcciones.
-2. Cambiá **Micrófono** a **Permitir**.
-3. Recargá la página (`F5`).
-4. Si el botón del mic aparece en rojo, hacé click para reactivarlo.
-
----
-
-## 🔑 Dónde conseguir las keys
-
-| Key | Dónde obtenerla |
-|---|---|
-| `VITE_ELEVENLABS_API_KEY` | [elevenlabs.io/app/settings/api-keys](https://elevenlabs.io/app/settings/api-keys) |
-| `VITE_ELEVENLABS_VOICE_ID` | [elevenlabs.io/app/voice-library](https://elevenlabs.io/app/voice-library) (copia el ID de la voz) |
-| `VITE_N8N_WEBHOOK_URL` | Panel de n8n → tu workflow → nodo Webhook → URL de producción |
+Este proyecto está bajo la Licencia MIT. Consulta el archivo `LICENSE` para más detalles.

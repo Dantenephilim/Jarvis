@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 3001;
 const HOST_PROC = process.env.HOST_PROC || '/proc';
 
 // ─────────────────────────────────────────
-// Read RAM from /proc/meminfo
+// Read RAM from /proc/meminfo with OS fallback
 // ─────────────────────────────────────────
 function readMemInfo() {
     try {
@@ -37,12 +37,17 @@ function readMemInfo() {
 
         return { ramPercent: pct, totalRam: totalGb };
     } catch {
-        return { ramPercent: 0, totalRam: 0 };
+        // Fallback using Node.js os module (e.g. Windows/macOS/non-Linux Docker hosts)
+        const total = os.totalmem();
+        const free = os.freemem();
+        const pct = total > 0 ? Math.round(((total - free) / total) * 100) : 0;
+        const totalGb = Math.round(total / (1024 * 1024 * 1024));
+        return { ramPercent: pct, totalRam: totalGb };
     }
 }
 
 // ─────────────────────────────────────────
-// Read CPU model from /proc/cpuinfo
+// Read CPU model from /proc/cpuinfo with OS fallback
 // ─────────────────────────────────────────
 function readCpuInfo() {
     try {
