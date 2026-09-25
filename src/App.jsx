@@ -222,10 +222,10 @@ function App() {
         <LogoWidget />
       </div>
 
-      {/* TOP LEFT ANCHOR */}
-      <div className="hud-layer" style={{ transformOrigin: 'top left', transform: `scale(${scale})` }}>
+      {/* TOP LEFT ANCHOR (3D Hologram Armor + Shortcuts) */}
+      <div className="hud-layer" style={{ transformOrigin: 'top left', transform: `scale(${scale})`, zIndex: 100 }}>
         <div className={`hud-anim-wrapper ${isAppReady ? 'anim-slide-right' : 'hud-hidden'}`}>
-          <SuitWidget />
+          <HoloModelWidget />
           <ShortcutsWidget onAction={sounds.click} />
         </div>
       </div>
@@ -233,12 +233,12 @@ function App() {
       {/* LEFT CENTER ANCHOR (SysStats + Music) */}
       <div className="hud-layer" style={{ transformOrigin: 'left center', transform: `scale(${scale})` }}>
         <div className={`hud-anim-wrapper ${isAppReady ? 'anim-slide-right-delayed' : 'hud-hidden'}`}>
-          <SysStatsWidget />
           <MusicWidget isActive={isMusicActive} onToggle={() => {
               const nextState = !isMusicActive;
               setIsMusicActive(nextState);
               setMuteState(nextState); // Mutes when playing, unmutes when stopped
           }} />
+          <SysStatsWidget />
         </div>
       </div>
 
@@ -314,11 +314,6 @@ function App() {
           </form>
 
         </div>
-      </div>
-
-      {/* HOLOGRAM LAYER - TOPMOST TO PREVENT TOOLTIP CLIPPING */}
-      <div className="hud-layer" style={{ transformOrigin: 'left center', transform: `scale(${scale})`, zIndex: 1000 }}>
-        <HoloModelWidget />
       </div>
 
       <style jsx="true">{`
