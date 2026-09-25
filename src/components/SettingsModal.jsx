@@ -10,7 +10,7 @@ const SettingsModal = ({ isOpen, onClose, onSave }) => {
     const [testMessage, setTestMessage] = useState('');
     const [theme, setTheme] = useState('VoiceCore');
 
-    const DEFAULT_N8N_URL = 'https://n8n.nexotechx.com/webhook/1faaf855-bd93-4b57-a298-8bdd00e419da';
+    const DEFAULT_N8N_URL = 'https://n8n.nexotechx.com/webhook/fbb90c0a-03c0-4c21-a5bf-dc85cf102a2a';
     const DEFAULT_VOICE_ID = 'DMyrgzQFny3JI1Y1paM5'; // Default Jarvis
 
     useEffect(() => {

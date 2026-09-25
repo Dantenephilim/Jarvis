@@ -8,7 +8,7 @@ export const getJarvisAnalyser = () => sharedAnalyser;
 
 export const useJarvisLogic = () => {
     const envWebhook = import.meta.env.VITE_N8N_WEBHOOK_URL;
-    const DEFAULT_N8N_URL = envWebhook ? envWebhook : "/api/webhook/1faaf855-bd93-4b57-a298-8bdd00e419da";
+    const DEFAULT_N8N_URL = envWebhook ? envWebhook : "/api/webhook/fbb90c0a-03c0-4c21-a5bf-dc85cf102a2a";
 
     // Normalize: if stored URL is any full nexotechx URL, use the Vite proxy path instead
     const normalizeN8nUrl = (url) => {
