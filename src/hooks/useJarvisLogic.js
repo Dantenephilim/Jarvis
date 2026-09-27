@@ -25,7 +25,12 @@ export const useJarvisLogic = () => {
         return url;
     };
 
-    const storedUrl = localStorage.getItem('n8n_webhook_url');
+    const OLD_DEFAULT_ID = "1faaf855-bd93-4b57-a298-8bdd00e419da";
+    let storedUrl = localStorage.getItem('n8n_webhook_url');
+    if (storedUrl && storedUrl.includes(OLD_DEFAULT_ID)) {
+        localStorage.removeItem('n8n_webhook_url');
+        storedUrl = null;
+    }
     const initialUrl = normalizeN8nUrl(storedUrl);
 
     const [n8nUrl, setN8nUrl] = useState(initialUrl);
@@ -211,36 +216,68 @@ export const useJarvisLogic = () => {
         setStatus('processing');
 
         try {
-            const response = await fetch(n8nUrl, {
+            const activeUrl = n8nUrl || DEFAULT_N8N_URL;
+            const response = await fetch(activeUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    chatInput: texto
+                    chatInput: texto,
+                    message: texto,
+                    text: texto,
+                    query: texto,
+                    sessionId: localStorage.getItem('jarvis_session_id') || 'jarvis-user-session'
                 })
             });
 
-            if (response.ok) {
-                const contentType = response.headers.get('content-type');
+            const contentType = response.headers.get('content-type') || '';
 
-                if (contentType && contentType.includes('application/json')) {
-                    const data = await response.json();
-                    const textToSpeak = data.output || data.response || data.text || data.message || JSON.stringify(data);
-                    addLog(`JARVIS: ${textToSpeak}`);
-                    await speakWithElevenLabs(textToSpeak);
-                } else {
-                    // n8n returned audio directly
+            if (response.ok) {
+                if (contentType.includes('audio/')) {
                     const audioBlob = await response.blob();
                     const audioUrl = URL.createObjectURL(audioBlob);
                     playAudio(audioUrl);
+                    return;
                 }
+
+                const rawText = await response.text();
+                if (!rawText || rawText.trim() === '') {
+                    const fallbackMsg = "Comando recibido en n8n.";
+                    addLog(`JARVIS: ${fallbackMsg}`);
+                    await speakWithElevenLabs(fallbackMsg);
+                    return;
+                }
+
+                let textToSpeak = rawText;
+                try {
+                    const data = JSON.parse(rawText);
+                    textToSpeak = data.output || data.response || data.text || data.message || data.result || (typeof data === 'string' ? data : JSON.stringify(data));
+                } catch {
+                    textToSpeak = rawText;
+                }
+
+                addLog(`JARVIS: ${textToSpeak}`);
+                await speakWithElevenLabs(textToSpeak);
             } else {
-                const errText = `System error ${response.status}`;
-                addLog(`ERROR: ${errText}`);
-                await speakWithElevenLabs(errText);
+                let errorDetails = '';
+                try {
+                    const errBody = await response.text();
+                    errorDetails = errBody ? ` (${errBody.substring(0, 100)})` : '';
+                } catch {}
+
+                const errLog = `System error ${response.status}${errorDetails} ${activeUrl}`;
+                addLog(`ERROR: ${errLog}`);
+
+                let userVoiceMsg = "Error en el servidor de n8n.";
+                if (response.status === 500) {
+                    userVoiceMsg = "Error 500 en n8n. Revisa el flujo en tu panel.";
+                } else if (response.status === 404) {
+                    userVoiceMsg = "Webhook no encontrado.";
+                }
+                await speakWithElevenLabs(userVoiceMsg);
             }
         } catch (error) {
             console.error("Connection error:", error, "URL attempted:", n8nUrl);
-            const errText = "Connection lost.";
+            const errText = "Error de conexión con n8n.";
             addLog(`CONNECTION ERROR: ${error.message} | URL: ${n8nUrl}`);
             await speakWithElevenLabs(errText);
         }
