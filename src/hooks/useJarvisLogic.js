@@ -378,28 +378,43 @@ export const useJarvisLogic = () => {
         });
     };
 
-    const toggleMute = useCallback(() => {
-        setIsMuted(prev => {
-            if (prev) {
-                // Unmuting: clear the blocked flag so the mic can restart
-                isBlockedRef.current = false;
-                isMutedRef.current = false;
-                // Use statusRef to avoid stale closure
-                if (statusRef.current !== 'speaking' && statusRef.current !== 'processing') {
-                    setTimeout(() => {
-                        try { recognitionRef.current?.start(); } catch(e) {}
-                    }, 100);
+    const toggleMute = useCallback(async () => {
+        if (isMutedRef.current) {
+            // Unmuting: Request hardware microphone access first
+            try {
+                if (navigator?.mediaDevices?.getUserMedia) {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    // Keep audio track open briefly or stop to unlock browser permission
+                    stream.getTracks().forEach(t => t.stop());
                 }
-                return false;
-            } else {
-                // Muting: abort current listening
-                isBlockedRef.current = false; // don't treat manual mute as a block
-                isMutedRef.current = true;
-                try { recognitionRef.current?.abort(); } catch(e) {}
-                setStatus('idle');
-                return true;
+            } catch (err) {
+                console.warn("Microphone hardware permission:", err);
+                if (err.name === 'NotAllowedError') {
+                    addLog("SYSTEM: Microphone permission denied by browser.");
+                }
             }
-        });
+
+            isBlockedRef.current = false;
+            isMutedRef.current = false;
+            setIsMuted(false);
+
+            if (statusRef.current !== 'speaking' && statusRef.current !== 'processing') {
+                setTimeout(() => {
+                    try { 
+                        recognitionRef.current?.start(); 
+                    } catch(e) {
+                        console.log("Recognition start catch:", e);
+                    }
+                }, 150);
+            }
+        } else {
+            // Muting: abort current listening
+            isBlockedRef.current = false;
+            isMutedRef.current = true;
+            setIsMuted(true);
+            try { recognitionRef.current?.abort(); } catch(e) {}
+            setStatus('idle');
+        }
     }, []);
 
     const setMuteState = (newState) => {
