@@ -19,6 +19,7 @@ const SettingsModal = ({ isOpen, onClose, onSave }) => {
     const DEFAULT_VOICE_ID = 'DMyrgzQFny3JI1Y1paM5'; // Default Jarvis
 
     useEffect(() => {
+        // Load initial from localStorage
         const storedId = localStorage.getItem('eleven_agent_id');
         let storedUrl = localStorage.getItem('n8n_webhook_url');
         const storedVoice = localStorage.getItem('eleven_voice_id');
@@ -28,6 +29,8 @@ const SettingsModal = ({ isOpen, onClose, onSave }) => {
         if (storedId) setAgentId(storedId);
         if (storedHaUrl) setHaUrl(storedHaUrl);
         if (storedHaToken) setHaToken(storedHaToken);
+        if (storedVoice) setVoiceId(storedVoice);
+        else setVoiceId(DEFAULT_VOICE_ID);
         
         if (storedUrl && !storedUrl.includes('nexotechx.com') && !storedUrl.includes('1faaf855')) {
             setN8nUrl(storedUrl);
@@ -35,16 +38,33 @@ const SettingsModal = ({ isOpen, onClose, onSave }) => {
             setN8nUrl(DEFAULT_N8N_URL);
             localStorage.setItem('n8n_webhook_url', DEFAULT_N8N_URL);
         }
-        
-        if (storedVoice) {
-            setVoiceId(storedVoice);
-        } else {
-            setVoiceId(DEFAULT_VOICE_ID);
-        }
-        
+
         const storedTheme = localStorage.getItem('jarvis_theme');
         if (storedTheme) setTheme(storedTheme);
         else setTheme('VoiceCore');
+
+        // Fetch server .env values
+        fetch('/api/config')
+            .then(res => res.json())
+            .then(data => {
+                if (data.n8nUrl) {
+                    setN8nUrl(data.n8nUrl);
+                    localStorage.setItem('n8n_webhook_url', data.n8nUrl);
+                }
+                if (data.haUrl) {
+                    setHaUrl(data.haUrl);
+                    localStorage.setItem('ha_url', data.haUrl);
+                }
+                if (data.haToken) {
+                    setHaToken(data.haToken);
+                    localStorage.setItem('ha_token', data.haToken);
+                }
+                if (data.elevenApiKey) {
+                    setAgentId(data.elevenApiKey);
+                    localStorage.setItem('eleven_agent_id', data.elevenApiKey);
+                }
+            })
+            .catch(() => {});
 
         setTestStatus('');
         setTestMessage('');
@@ -52,13 +72,31 @@ const SettingsModal = ({ isOpen, onClose, onSave }) => {
         setHaTestMessage('');
     }, [isOpen]);
 
-    const handleSave = () => {
+    const handleSave = async () => {
         localStorage.setItem('eleven_agent_id', agentId);
         localStorage.setItem('n8n_webhook_url', n8nUrl);
         localStorage.setItem('eleven_voice_id', voiceId);
         localStorage.setItem('ha_url', haUrl);
         localStorage.setItem('ha_token', haToken);
         localStorage.setItem('jarvis_theme', theme);
+
+        // Persist directly into server .env file
+        try {
+            await fetch('/api/save-config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    n8nUrl,
+                    haUrl,
+                    haToken,
+                    elevenApiKey: agentId,
+                    elevenVoiceId: voiceId
+                })
+            });
+        } catch (e) {
+            console.warn('Could not persist to server .env directly:', e);
+        }
+
         onSave({ agentId, n8nUrl, voiceId, theme, haUrl, haToken });
         onClose();
     };
@@ -74,10 +112,11 @@ const SettingsModal = ({ isOpen, onClose, onSave }) => {
 
         try {
             const cleanUrl = haUrl.replace(/\/$/, '');
-            const res = await fetch(`${cleanUrl}/api/`, {
+            const res = await fetch('/api/ha/', {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${haToken}`,
+                    'x-ha-url': cleanUrl,
                     'Content-Type': 'application/json'
                 }
             });
@@ -95,43 +134,36 @@ const SettingsModal = ({ isOpen, onClose, onSave }) => {
         }
     };
 
-    const handleTestConnection = () => {
+    const handleTestConnection = async () => {
         if (!n8nUrl) {
             setTestStatus('error');
             setTestMessage('Please enter a URL first');
             return;
         }
         setTestStatus('testing');
-        setTestMessage('Pinging n8n...');
+        setTestMessage('Pinging n8n via proxy...');
 
-        let testUrl = n8nUrl;
-        if (testUrl.includes('nexotechx.com')) {
-            try {
-                const urlObj = new URL(testUrl);
-                testUrl = `/api${urlObj.pathname}`;
-            } catch (e) {
-                // Invalid URL
-            }
-        }
-
-        fetch(testUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ chatInput: 'TEST_CONNECTION_FROM_JARVIS' })
-        })
-            .then(res => {
-                if (res.ok) {
-                    setTestStatus('success');
-                    setTestMessage('Connection Successful!');
-                } else {
-                    setTestStatus('error');
-                    setTestMessage(`Failed: ${res.status} ${res.statusText}`);
-                }
-            })
-            .catch(err => {
-                setTestStatus('error');
-                setTestMessage(`Error: ${err.message}`);
+        try {
+            const res = await fetch('/api/n8n-proxy', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'x-n8n-url': n8nUrl
+                },
+                body: JSON.stringify({ chatInput: 'TEST_CONNECTION_FROM_JARVIS' })
             });
+
+            if (res.ok) {
+                setTestStatus('success');
+                setTestMessage('Connection Successful!');
+            } else {
+                setTestStatus('error');
+                setTestMessage(`Failed: HTTP ${res.status}`);
+            }
+        } catch (err) {
+            setTestStatus('error');
+            setTestMessage(`Error: ${err.message}`);
+        }
     };
 
     if (!isOpen) return null;

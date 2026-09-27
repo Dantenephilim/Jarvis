@@ -245,20 +245,51 @@ export const useJarvisLogic = () => {
     const enviarAJarvis = async (texto) => {
         setStatus('processing');
 
+        const payload = {
+            chatInput: texto,
+            message: texto,
+            text: texto,
+            query: texto,
+            prompt: texto,
+            input: texto,
+            sessionId: 'jarvis-session'
+        };
+
+        let response = null;
+
+        // Attempt 1: Via backend proxy /api/n8n-proxy (Bypasses CORS & Mixed Content HTTPS)
         try {
-            const response = await fetch(n8nUrl, {
+            response = await fetch('/api/n8n-proxy', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    chatInput: texto,
-                    message: texto,
-                    text: texto,
-                    query: texto,
-                    prompt: texto,
-                    input: texto,
-                    sessionId: 'jarvis-session'
-                })
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-n8n-url': n8nUrl
+                },
+                body: JSON.stringify(payload)
             });
+        } catch (proxyErr) {
+            console.warn("n8n proxy error, attempting direct call:", proxyErr);
+        }
+
+        // Attempt 2: Direct call fallback
+        if (!response || !response.ok) {
+            try {
+                const directRes = await fetch(n8nUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (directRes.ok) response = directRes;
+            } catch (directErr) {
+                if (!response) {
+                    console.error("Connection error:", directErr, "URL attempted:", n8nUrl);
+                    const errText = "Connection lost.";
+                    addLog(`CONNECTION ERROR: ${directErr.message} | URL: ${n8nUrl}`);
+                    await speakWithElevenLabs(errText);
+                    return;
+                }
+            }
+        }
 
             if (response.ok) {
                 const contentType = response.headers.get('content-type');
