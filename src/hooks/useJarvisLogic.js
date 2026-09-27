@@ -61,6 +61,14 @@ export const useJarvisLogic = () => {
         }
     }, []);
 
+    // Auto-redirect to HTTPS when accessing over LAN IP to enable mic/cam
+    useEffect(() => {
+        if (window.location.protocol === 'http:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+            const httpsUrl = `https://${window.location.host}${window.location.pathname}${window.location.search}`;
+            window.location.replace(httpsUrl);
+        }
+    }, []);
+
     const recognitionRef = useRef(null);
     const audioRef = useRef(null);
 
