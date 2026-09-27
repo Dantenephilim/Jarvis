@@ -10,6 +10,8 @@ services:
         - VITE_N8N_WEBHOOK_URL=${VITE_N8N_WEBHOOK_URL:-}
         - VITE_ELEVENLABS_API_KEY=${VITE_ELEVENLABS_API_KEY:-}
         - VITE_ELEVENLABS_VOICE_ID=${VITE_ELEVENLABS_VOICE_ID:-}
+        - VITE_HA_URL=${VITE_HA_URL:-${HA_URL:-}}
+        - VITE_HA_TOKEN=${VITE_HA_TOKEN:-${HA_TOKEN:-}}
     container_name: jarvis-app
     restart: unless-stopped
     ports:
@@ -21,7 +23,7 @@ services:
       - jarvis-net
 
   # ─────────────────────────────────────────
-  # Stats Server (reads host CPU/RAM from /proc)
+  # Stats Server (reads host CPU/RAM from /proc + Home Assistant proxy)
   # ─────────────────────────────────────────
   jarvis-stats:
     build:
@@ -35,6 +37,10 @@ services:
     environment:
       - HOST_PROC=/host/proc
       - PORT=3001
+      - VITE_HA_URL=${VITE_HA_URL:-${HA_URL:-}}
+      - VITE_HA_TOKEN=${VITE_HA_TOKEN:-${HA_TOKEN:-}}
+      - HA_URL=${HA_URL:-${VITE_HA_URL:-}}
+      - HA_TOKEN=${HA_TOKEN:-${VITE_HA_TOKEN:-}}
     networks:
       - jarvis-net
 

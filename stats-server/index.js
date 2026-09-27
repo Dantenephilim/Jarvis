@@ -80,6 +80,47 @@ app.get('/stats', (req, res) => {
     });
 });
 
+app.use(express.json());
+
+// ─────────────────────────────────────────
+// Proxy for Home Assistant to bypass CORS & Mixed Content
+// ─────────────────────────────────────────
+app.all('/ha/*', async (req, res) => {
+    const haUrl = process.env.VITE_HA_URL || process.env.HA_URL || process.env.HOME_ASSISTANT_URL;
+    const haToken = process.env.VITE_HA_TOKEN || process.env.HA_TOKEN || process.env.HOME_ASSISTANT_TOKEN;
+    
+    const targetUrl = (req.headers['x-ha-url'] || haUrl || '').replace(/\/$/, '');
+    const targetToken = (req.headers['authorization'] ? req.headers['authorization'].replace(/^Bearer\s+/i, '') : '') || req.headers['x-ha-token'] || haToken;
+
+    if (!targetUrl || !targetToken) {
+        return res.status(400).json({ error: 'Home Assistant URL or Token not configured in .env' });
+    }
+
+    const subPath = req.params[0] || '';
+    const fullHaUrl = `${targetUrl}/api/${subPath}`;
+
+    try {
+        const fetchOptions = {
+            method: req.method,
+            headers: {
+                'Authorization': `Bearer ${targetToken}`,
+                'Content-Type': 'application/json'
+            }
+        };
+
+        if (req.method !== 'GET' && req.method !== 'HEAD' && req.body && Object.keys(req.body).length > 0) {
+            fetchOptions.body = JSON.stringify(req.body);
+        }
+
+        const haResponse = await fetch(fullHaUrl, fetchOptions);
+        const data = await haResponse.json().catch(() => ({}));
+        return res.status(haResponse.status).json(data);
+    } catch (err) {
+        console.error('[HA Proxy Error]:', err.message);
+        return res.status(502).json({ error: 'Failed to communicate with Home Assistant', message: err.message });
+    }
+});
+
 app.get('/health', (req, res) => res.json({ ok: true }));
 
 app.listen(PORT, () => {

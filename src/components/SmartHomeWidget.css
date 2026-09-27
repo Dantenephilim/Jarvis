@@ -3,12 +3,12 @@
     top: 15px;
     left: 50%;
     transform: translateX(-50%);
-    width: 580px;
-    max-width: 90vw;
-    background: rgba(2, 8, 18, 0.75);
+    width: 620px;
+    max-width: 92vw;
+    background: rgba(2, 8, 18, 0.85);
     border: 1px solid rgba(0, 243, 255, 0.3);
     border-top: 2px solid #00f3ff;
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(12px);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 15px rgba(0, 243, 255, 0.15);
     border-radius: 4px;
     font-family: var(--font-main, 'Courier New', monospace);
@@ -19,7 +19,7 @@
 }
 
 .smart-home-hud.collapsed {
-    width: 320px;
+    width: 340px;
 }
 
 .hud-top-bar {
@@ -82,11 +82,55 @@
     color: #fff;
 }
 
+/* Category Filter Tabs */
+.ha-filter-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 6px 12px 0;
+    overflow-x: auto;
+    border-bottom: 1px solid rgba(0, 243, 255, 0.1);
+}
+
+.ha-tab-btn {
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: #6688aa;
+    font-family: inherit;
+    font-size: 0.55rem;
+    letter-spacing: 1px;
+    font-weight: bold;
+    padding: 3px 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.ha-tab-btn:hover {
+    color: #00f3ff;
+}
+
+.ha-tab-btn.active {
+    color: #00f3ff;
+    border-bottom-color: #00f3ff;
+    text-shadow: 0 0 6px rgba(0, 243, 255, 0.5);
+}
+
 .hud-content-grid {
     padding: 10px 12px;
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 8px;
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+.hud-content-grid::-webkit-scrollbar {
+    width: 4px;
+}
+
+.hud-content-grid::-webkit-scrollbar-thumb {
+    background: rgba(0, 243, 255, 0.3);
+    border-radius: 2px;
 }
 
 .ha-tile {
@@ -97,7 +141,7 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    min-height: 64px;
+    min-height: 58px;
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
     position: relative;
@@ -177,7 +221,7 @@
 }
 
 .tile-bottom {
-    margin-top: 6px;
+    margin-top: 4px;
 }
 
 .tile-name {
@@ -191,7 +235,7 @@
 }
 
 .tile-val {
-    font-size: 0.50rem;
+    font-size: 0.48rem;
     color: #6688aa;
     letter-spacing: 1px;
     text-transform: uppercase;
@@ -205,7 +249,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 4px 12px 8px;
+    padding: 6px 12px 8px;
     border-top: 1px solid rgba(0, 243, 255, 0.1);
     font-size: 0.55rem;
     color: #557799;
@@ -232,7 +276,7 @@
 
 @media (max-width: 900px) {
     .smart-home-hud {
-        width: 92vw;
+        width: 94vw;
     }
     .hud-content-grid {
         grid-template-columns: repeat(2, 1fr);
