@@ -21,14 +21,18 @@ const SettingsModal = ({ isOpen, onClose, onSave }) => {
         if (storedId) setAgentId(storedId);
         
         if (storedUrl) {
-            // Hotfix: clean up port 5678 if present from previous stores
-            if (storedUrl.includes(':5678')) {
+            // Hotfix: clean up old deprecated webhook IDs or port 5678
+            if (storedUrl.includes('1faaf855') || storedUrl.includes('TU_WEBHOOK') || storedUrl.includes('production_link')) {
+                storedUrl = DEFAULT_N8N_URL;
+                localStorage.setItem('n8n_webhook_url', DEFAULT_N8N_URL);
+            } else if (storedUrl.includes(':5678')) {
                 storedUrl = storedUrl.replace(':5678', '');
                 localStorage.setItem('n8n_webhook_url', storedUrl);
             }
             setN8nUrl(storedUrl);
         } else {
             setN8nUrl(DEFAULT_N8N_URL);
+            localStorage.setItem('n8n_webhook_url', DEFAULT_N8N_URL);
         }
         
         if (storedVoice) {

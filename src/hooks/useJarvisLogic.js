@@ -25,11 +25,10 @@ export const useJarvisLogic = () => {
         return url;
     };
 
-    const OLD_DEFAULT_ID = "1faaf855-bd93-4b57-a298-8bdd00e419da";
     let storedUrl = localStorage.getItem('n8n_webhook_url');
-    if (storedUrl && storedUrl.includes(OLD_DEFAULT_ID)) {
-        localStorage.removeItem('n8n_webhook_url');
-        storedUrl = null;
+    if (!storedUrl || storedUrl.includes('1faaf855') || storedUrl.includes('TU_WEBHOOK') || storedUrl.includes('production_link')) {
+        storedUrl = DEFAULT_N8N_URL;
+        localStorage.setItem('n8n_webhook_url', DEFAULT_N8N_URL);
     }
     const initialUrl = normalizeN8nUrl(storedUrl);
 

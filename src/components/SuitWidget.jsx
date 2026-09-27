@@ -11,8 +11,8 @@ const SuitWidget = () => {
     
     // High-DPI Canvas
     const dpr = window.devicePixelRatio || 1;
-    const width = 200;
-    const height = 280;
+    const width = 160;
+    const height = 160;
     canvas.width = width * dpr;
     canvas.height = height * dpr;
     canvas.style.width = `${width}px`;
@@ -44,8 +44,8 @@ const SuitWidget = () => {
       ctx.clearRect(0, 0, width, height);
       
       const centerX = width / 2;
-      const centerY = height / 2 - 20;
-      const radius = 80;
+      const centerY = height / 2;
+      const radius = 62;
 
       if (!isDragging) {
         // Apply friction to slow down the spin momentum
@@ -154,8 +154,8 @@ const SuitWidget = () => {
   }, []);
 
   return (
-    <div className="suit-widget-container" style={{ top: '20px', left: '30px', position: 'absolute' }}>
-      <div className="suit-hologram-wrapper">
+    <div className="suit-widget-container" style={{ top: '20px', left: '30px', position: 'absolute', width: '160px', height: '160px' }}>
+      <div className="suit-hologram-wrapper" style={{ width: '160px', height: '160px' }}>
         <canvas ref={canvasRef} className="holo-canvas" />
       </div>
     </div>

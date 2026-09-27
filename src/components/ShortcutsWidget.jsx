@@ -5,7 +5,7 @@ const ShortcutsWidget = () => {
         <div style={{
             position: 'absolute',
             left: '40px',
-            top: '180px',
+            top: '200px',
             display: 'flex',
             flexDirection: 'column',
             gap: '15px',

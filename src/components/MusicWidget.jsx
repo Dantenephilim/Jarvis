@@ -150,7 +150,7 @@ const MusicWidget = ({ isActive, onToggle }) => {
             <style jsx="true">{`
                 .music-container {
                     position: absolute;
-                    top: 360px;
+                    top: 380px;
                     left: 30px;
                     width: 200px;
                     background: rgba(0, 5, 10, 0.6);
