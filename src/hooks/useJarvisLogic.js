@@ -291,29 +291,23 @@ export const useJarvisLogic = () => {
             }
         }
 
-            if (response.ok) {
-                const contentType = response.headers.get('content-type');
+        if (response && response.ok) {
+            const contentType = response.headers.get('content-type') || '';
 
-                if (contentType && contentType.includes('application/json')) {
-                    const data = await response.json();
-                    const textToSpeak = data.output || data.response || data.text || data.message || JSON.stringify(data);
-                    addLog(`JARVIS: ${textToSpeak}`);
-                    await speakWithElevenLabs(textToSpeak);
-                } else {
-                    // n8n returned audio directly
-                    const audioBlob = await response.blob();
-                    const audioUrl = URL.createObjectURL(audioBlob);
-                    playAudio(audioUrl);
-                }
+            if (contentType.includes('application/json')) {
+                const data = await response.json();
+                const textToSpeak = data.output || data.response || data.text || data.message || JSON.stringify(data);
+                addLog(`JARVIS: ${textToSpeak}`);
+                await speakWithElevenLabs(textToSpeak);
             } else {
-                const errText = `System error ${response.status}`;
-                addLog(`ERROR: ${errText}`);
-                await speakWithElevenLabs(errText);
+                // n8n returned audio directly
+                const audioBlob = await response.blob();
+                const audioUrl = URL.createObjectURL(audioBlob);
+                playAudio(audioUrl);
             }
-        } catch (error) {
-            console.error("Connection error:", error, "URL attempted:", n8nUrl);
-            const errText = "Connection lost.";
-            addLog(`CONNECTION ERROR: ${error.message} | URL: ${n8nUrl}`);
+        } else if (response) {
+            const errText = `System error ${response.status}`;
+            addLog(`ERROR: ${errText}`);
             await speakWithElevenLabs(errText);
         }
     };
