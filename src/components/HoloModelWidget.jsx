@@ -6,17 +6,17 @@ import { ChevronLeft, ChevronRight, Layers, Shield, Sparkles } from 'lucide-reac
 import defaultIronManModel from '../assets/iron_man.glb';
 
 export const ARMOR_REGISTRY = [
-  { id: 'mark_85', name: 'MARK LXXXV (PRIME)', file: defaultIronManModel, tag: 'NANO-TECH', scale: 0.015 },
-  { id: 'mark_7', name: 'MARK VII', path: '/assets/iron-man_mark_7.glb', tag: 'HEAVY ARTILLERY', scale: 0.015 },
-  { id: 'mark_6', name: 'MARK VI (AVENGERS)', path: '/assets/iron_man_the_avengers.glb', tag: 'TRI-CORE', scale: 0.015 },
-  { id: 'stealth', name: 'MARK 85 STEALTH', path: '/assets/iron_man_mark_85stealth.glb', tag: 'NIGHT OPS', scale: 0.015 },
-  { id: 'samurai', name: 'IRON SAMURAI', path: '/assets/iron_man_-_iron_samurai.glb', tag: 'TACTICAL BLADE', scale: 0.015 },
-  { id: 'war_machine', name: 'WAR MACHINE', path: '/assets/war_machine_-_cacw.glb', tag: 'TACTICAL DEFENSE', scale: 0.015 },
-  { id: 'mark_1', name: 'MARK I (ORIGIN)', path: '/assets/iron_man_-_mark_1.glb', tag: 'CAVE PROTOCOL', scale: 0.015 },
-  { id: 'hulkbuster', name: 'HULKBUSTER', path: '/assets/hulkbuster.glb', tag: 'HEAVY BRAWLER', scale: 0.012 }
+  { id: 'mark_85', name: 'MARK LXXXV (PRIME)', file: defaultIronManModel, tag: 'NANO-TECH', scale: 0.013 },
+  { id: 'mark_7', name: 'MARK VII', path: '/assets/iron-man_mark_7.glb', tag: 'HEAVY ARTILLERY', scale: 0.013 },
+  { id: 'mark_6', name: 'MARK VI (AVENGERS)', path: '/assets/iron_man_the_avengers.glb', tag: 'TRI-CORE', scale: 0.013 },
+  { id: 'stealth', name: 'MARK 85 STEALTH', path: '/assets/iron_man_mark_85stealth.glb', tag: 'NIGHT OPS', scale: 0.013 },
+  { id: 'samurai', name: 'IRON SAMURAI', path: '/assets/iron_man_-_iron_samurai.glb', tag: 'TACTICAL BLADE', scale: 0.013 },
+  { id: 'war_machine', name: 'WAR MACHINE', path: '/assets/war_machine_-_cacw.glb', tag: 'TACTICAL DEFENSE', scale: 0.013 },
+  { id: 'mark_1', name: 'MARK I (ORIGIN)', path: '/assets/iron_man_-_mark_1.glb', tag: 'CAVE PROTOCOL', scale: 0.013 },
+  { id: 'hulkbuster', name: 'HULKBUSTER', path: '/assets/hulkbuster.glb', tag: 'HEAVY BRAWLER', scale: 0.009 }
 ];
 
-const ArmorModelRenderer = ({ modelSource, scale = 0.015 }) => {
+const ArmorModelRenderer = ({ modelSource, scale = 0.013 }) => {
   const { scene } = useGLTF(modelSource);
   const groupRef = useRef();
 
@@ -104,7 +104,7 @@ const ArmorModelRenderer = ({ modelSource, scale = 0.015 }) => {
       if (spawnProgress.current > 1) spawnProgress.current = 1;
       
       const eased = 1 - Math.pow(1 - spawnProgress.current, 3);
-      groupRef.current.position.y = -2 + (eased * 2);
+      groupRef.current.position.y = -1.5 + (eased * 1.5);
       
       clonedScene.traverse(child => {
         if (child.isMesh && child.material) {
@@ -239,7 +239,7 @@ class ModelErrorBoundary extends React.Component {
   }
   render() {
     if (this.state.hasError) {
-      return <ArmorModelRenderer modelSource={defaultIronManModel} scale={0.015} />;
+      return <ArmorModelRenderer modelSource={defaultIronManModel} scale={0.013} />;
     }
     return this.props.children;
   }
@@ -263,7 +263,15 @@ const HoloModelWidget = () => {
   };
 
   return (
-    <div style={{ position: 'absolute', bottom: '20px', left: '15px', width: '290px', height: '390px', zIndex: 50, overflow: 'visible' }}>
+    <div style={{ 
+      position: 'absolute', 
+      bottom: '65px', 
+      left: '25px', 
+      width: '310px', 
+      height: '420px', 
+      zIndex: 50, 
+      overflow: 'visible' 
+    }}>
       
       {/* HUD Armor Selector Control Ribbon */}
       <div style={{
@@ -371,7 +379,7 @@ const HoloModelWidget = () => {
       {/* 3D Holographic Canvas */}
       <div style={{ width: '100%', height: '100%', overflow: 'visible', marginTop: '10px' }}>
         <Canvas 
-          camera={{ position: [0, 0, 7.5], fov: 45 }} 
+          camera={{ position: [0, 0.1, 8.5], fov: 42 }} 
           style={{ width: '100%', height: '100%', overflow: 'visible' }}
         >
           <ambientLight intensity={0.5} />
