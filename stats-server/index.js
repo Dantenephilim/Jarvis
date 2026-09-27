@@ -21,8 +21,11 @@ function getEnvFilePath() {
     const candidates = [
         '/app/.env',
         '/host-project/.env',
+        '/host/.env',
         path.join(process.cwd(), '.env'),
-        path.join(process.cwd(), '..', '.env')
+        path.join(process.cwd(), '..', '.env'),
+        '/home/dante/Jarvis/.env',
+        '/root/Jarvis/.env'
     ];
     for (const p of candidates) {
         if (fs.existsSync(p)) return p;
@@ -52,6 +55,43 @@ function parseEnvFile(filePath) {
     } catch {
         return {};
     }
+}
+
+function getMergedEnv() {
+    const envPath = getEnvFilePath();
+    const fileEnv = parseEnvFile(envPath);
+    return { ...process.env, ...fileEnv };
+}
+
+function getHaConfig() {
+    const env = getMergedEnv();
+    const url = (
+        env.HA_URL ||
+        env.VITE_HA_URL ||
+        env.HOME_ASSISTANT_URL ||
+        env.HASS_URL ||
+        env.HOMEASSISTANT_URL ||
+        ''
+    ).trim();
+    
+    const token = (
+        env.HA_TOKEN ||
+        env.VITE_HA_TOKEN ||
+        env.HOME_ASSISTANT_TOKEN ||
+        env.HASS_TOKEN ||
+        env.HOMEASSISTANT_TOKEN ||
+        env.SUPERVISOR_TOKEN ||
+        env.HA_API_KEY ||
+        env.HOME_ASSISTANT_API_KEY ||
+        ''
+    ).trim();
+
+    let cleanUrl = url.replace(/\/+$/, '');
+    if (cleanUrl.endsWith('/api')) {
+        cleanUrl = cleanUrl.slice(0, -4).replace(/\/+$/, '');
+    }
+
+    return { url: cleanUrl, token };
 }
 
 function writeEnvFile(filePath, updates) {
@@ -167,15 +207,15 @@ app.get('/stats', (req, res) => {
 // Configuration API: Load & Save to .env
 // ─────────────────────────────────────────
 app.get('/config', (req, res) => {
-    const envPath = getEnvFilePath();
-    const fileEnv = parseEnvFile(envPath);
+    const env = getMergedEnv();
+    const ha = getHaConfig();
 
     res.json({
-        n8nUrl: fileEnv['VITE_N8N_WEBHOOK_URL'] || fileEnv['N8N_WEBHOOK_URL'] || process.env.VITE_N8N_WEBHOOK_URL || process.env.N8N_WEBHOOK_URL || 'http://10.0.0.141:5678/webhook/fbb90c0a-03c0-4c21-a5bf-dc85cf102a2a',
-        haUrl: fileEnv['VITE_HA_URL'] || fileEnv['HA_URL'] || process.env.VITE_HA_URL || process.env.HA_URL || '',
-        haToken: fileEnv['VITE_HA_TOKEN'] || fileEnv['HA_TOKEN'] || process.env.VITE_HA_TOKEN || process.env.HA_TOKEN || '',
-        elevenApiKey: fileEnv['VITE_ELEVENLABS_API_KEY'] || process.env.VITE_ELEVENLABS_API_KEY || '',
-        elevenVoiceId: fileEnv['VITE_ELEVENLABS_VOICE_ID'] || process.env.VITE_ELEVENLABS_VOICE_ID || 'DMyrgzQFny3JI1Y1paM5'
+        n8nUrl: env.VITE_N8N_WEBHOOK_URL || env.N8N_WEBHOOK_URL || 'http://10.0.0.141:5678/webhook/fbb90c0a-03c0-4c21-a5bf-dc85cf102a2a',
+        haUrl: ha.url || '',
+        haToken: ha.token || '',
+        elevenApiKey: env.VITE_ELEVENLABS_API_KEY || '',
+        elevenVoiceId: env.VITE_ELEVENLABS_VOICE_ID || 'DMyrgzQFny3JI1Y1paM5'
     });
 });
 
@@ -191,16 +231,19 @@ app.post('/save-config', (req, res) => {
         process.env.N8N_WEBHOOK_URL = n8nUrl;
     }
     if (haUrl !== undefined) {
-        updates['VITE_HA_URL'] = haUrl;
-        updates['HA_URL'] = haUrl;
-        process.env.VITE_HA_URL = haUrl;
-        process.env.HA_URL = haUrl;
+        let cleanHa = haUrl.trim().replace(/\/+$/, '');
+        if (cleanHa.endsWith('/api')) cleanHa = cleanHa.slice(0, -4).replace(/\/+$/, '');
+        updates['VITE_HA_URL'] = cleanHa;
+        updates['HA_URL'] = cleanHa;
+        process.env.VITE_HA_URL = cleanHa;
+        process.env.HA_URL = cleanHa;
     }
     if (haToken !== undefined) {
-        updates['VITE_HA_TOKEN'] = haToken;
-        updates['HA_TOKEN'] = haToken;
-        process.env.VITE_HA_TOKEN = haToken;
-        process.env.HA_TOKEN = haToken;
+        const cleanToken = haToken.trim();
+        updates['VITE_HA_TOKEN'] = cleanToken;
+        updates['HA_TOKEN'] = cleanToken;
+        process.env.VITE_HA_TOKEN = cleanToken;
+        process.env.HA_TOKEN = cleanToken;
     }
     if (elevenApiKey !== undefined) {
         updates['VITE_ELEVENLABS_API_KEY'] = elevenApiKey;
@@ -225,7 +268,8 @@ app.post('/save-config', (req, res) => {
 // Proxy for n8n Webhook to bypass Mixed Content & CORS
 // ─────────────────────────────────────────
 app.all('/n8n-proxy', async (req, res) => {
-    const defaultUrl = process.env.VITE_N8N_WEBHOOK_URL || process.env.N8N_WEBHOOK_URL || 'http://10.0.0.141:5678/webhook/fbb90c0a-03c0-4c21-a5bf-dc85cf102a2a';
+    const env = getMergedEnv();
+    const defaultUrl = env.VITE_N8N_WEBHOOK_URL || env.N8N_WEBHOOK_URL || 'http://10.0.0.141:5678/webhook/fbb90c0a-03c0-4c21-a5bf-dc85cf102a2a';
     const targetUrl = (req.headers['x-n8n-url'] || defaultUrl).trim();
 
     try {
@@ -260,18 +304,36 @@ app.all('/n8n-proxy', async (req, res) => {
 // Proxy for Home Assistant to bypass CORS & Mixed Content
 // ─────────────────────────────────────────
 app.all('/ha/*', async (req, res) => {
-    const haUrl = process.env.VITE_HA_URL || process.env.HA_URL || process.env.HOME_ASSISTANT_URL;
-    const haToken = process.env.VITE_HA_TOKEN || process.env.HA_TOKEN || process.env.HOME_ASSISTANT_TOKEN;
+    const haConfig = getHaConfig();
     
-    const targetUrl = (req.headers['x-ha-url'] || haUrl || '').replace(/\/$/, '');
-    const targetToken = (req.headers['authorization'] ? req.headers['authorization'].replace(/^Bearer\s+/i, '') : '') || req.headers['x-ha-token'] || haToken;
-
-    if (!targetUrl || !targetToken) {
-        return res.status(400).json({ error: 'Home Assistant URL or Token not configured in .env' });
+    let targetUrl = (req.headers['x-ha-url'] || haConfig.url || '').trim().replace(/\/+$/, '');
+    if (targetUrl.endsWith('/api')) {
+        targetUrl = targetUrl.slice(0, -4).replace(/\/+$/, '');
     }
 
-    const subPath = req.params[0] || '';
-    const fullHaUrl = `${targetUrl}/api/${subPath}`;
+    let targetToken = (
+        (req.headers['authorization'] ? req.headers['authorization'].replace(/^Bearer\s+/i, '') : '') ||
+        req.headers['x-ha-token'] ||
+        haConfig.token
+    ).trim();
+
+    if (!targetUrl || !targetToken) {
+        console.warn(`[HA Proxy] Missing configuration: URL='${targetUrl}', Token=${targetToken ? 'PRESENT' : 'MISSING'}`);
+        return res.status(400).json({ 
+            error: 'Home Assistant URL or Token not configured in .env',
+            urlConfigured: !!targetUrl,
+            tokenConfigured: !!targetToken
+        });
+    }
+
+    if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
+        targetUrl = `http://${targetUrl}`;
+    }
+
+    const subPath = (req.params[0] || '').replace(/^\/+/, '');
+    const fullHaUrl = subPath ? `${targetUrl}/api/${subPath}` : `${targetUrl}/api/`;
+
+    console.log(`[HA Proxy] Forwarding ${req.method} request to: ${fullHaUrl}`);
 
     try {
         const fetchOptions = {
@@ -287,11 +349,22 @@ app.all('/ha/*', async (req, res) => {
         }
 
         const haResponse = await fetch(fullHaUrl, fetchOptions);
-        const data = await haResponse.json().catch(() => ({}));
-        return res.status(haResponse.status).json(data);
+        const contentType = haResponse.headers.get('content-type') || '';
+
+        if (contentType.includes('application/json')) {
+            const data = await haResponse.json();
+            return res.status(haResponse.status).json(data);
+        } else {
+            const text = await haResponse.text();
+            return res.status(haResponse.status).send(text);
+        }
     } catch (err) {
-        console.error('[HA Proxy Error]:', err.message);
-        return res.status(502).json({ error: 'Failed to communicate with Home Assistant', message: err.message });
+        console.error(`[HA Proxy Error] Failed to reach ${fullHaUrl}:`, err.message);
+        return res.status(502).json({ 
+            error: 'Failed to communicate with Home Assistant', 
+            message: err.message,
+            targetUrl: fullHaUrl
+        });
     }
 });
 
@@ -300,4 +373,6 @@ app.get('/health', (req, res) => res.json({ ok: true }));
 app.listen(PORT, () => {
     console.log(`[Jarvis Stats & Proxy] Running on port ${PORT}`);
     console.log(`[Jarvis Stats & Proxy] Reading /proc from: ${HOST_PROC}`);
+    const ha = getHaConfig();
+    console.log(`[Jarvis Stats & Proxy] Home Assistant configured: URL=${ha.url ? 'YES' : 'NO'}, TOKEN=${ha.token ? 'YES' : 'NO'}`);
 });

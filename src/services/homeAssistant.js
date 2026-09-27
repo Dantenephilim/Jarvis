@@ -3,13 +3,15 @@
  */
 
 export const getHaConfig = () => {
-    const url = localStorage.getItem('ha_url') || import.meta.env.VITE_HA_URL || '';
-    const token = localStorage.getItem('ha_token') || import.meta.env.VITE_HA_TOKEN || '';
-    return { url: url.replace(/\/$/, ''), token };
+    const url = (localStorage.getItem('ha_url') || import.meta.env.VITE_HA_URL || '').trim();
+    const token = (localStorage.getItem('ha_token') || import.meta.env.VITE_HA_TOKEN || '').trim();
+    return { url: url.replace(/\/+$/, ''), token };
 };
 
 export const checkHaConnection = async (customUrl, customToken) => {
-    const config = (customUrl && customToken) ? { url: customUrl.replace(/\/$/, ''), token: customToken } : getHaConfig();
+    const config = (customUrl !== undefined && customToken !== undefined) 
+        ? { url: (customUrl || '').trim().replace(/\/+$/, ''), token: (customToken || '').trim() } 
+        : getHaConfig();
     
     // Attempt 1: Via backend proxy /api/ha/ (bypasses CORS & Mixed Content HTTPS)
     try {
@@ -21,9 +23,15 @@ export const checkHaConnection = async (customUrl, customToken) => {
         if (proxyRes.ok) {
             const data = await proxyRes.json();
             return { success: true, message: data.message || 'HA Running via Proxy' };
+        } else {
+            const errData = await proxyRes.json().catch(() => ({}));
+            return { 
+                success: false, 
+                message: errData.message || errData.error || `HTTP ${proxyRes.status}: ${proxyRes.statusText}` 
+            };
         }
     } catch (e) {
-        // Proxy not available or failed
+        console.warn('[HA Service] Proxy check error:', e.message);
     }
 
     // Attempt 2: Direct call (when on same protocol/origin)
@@ -42,11 +50,11 @@ export const checkHaConnection = async (customUrl, customToken) => {
             }
             return { success: false, message: `HTTP ${res.status}: ${res.statusText}` };
         } catch (err) {
-            return { success: false, message: err.message || 'Error de conexión' };
+            return { success: false, message: err.message || 'Error de conexión directa' };
         }
     }
 
-    return { success: false, message: 'URL o Token no configurado' };
+    return { success: false, message: 'URL o Token de Home Assistant no configurado' };
 };
 
 export const fetchHaStates = async () => {
@@ -62,9 +70,11 @@ export const fetchHaStates = async () => {
         if (proxyRes.ok) {
             const data = await proxyRes.json();
             if (Array.isArray(data)) return data;
+        } else {
+            console.warn('[HA Service] /api/ha/states failed with status', proxyRes.status);
         }
     } catch (e) {
-        // Proxy failed
+        console.warn('[HA Service] /api/ha/states network error:', e.message);
     }
 
     // Attempt 2: Direct call
@@ -81,7 +91,7 @@ export const fetchHaStates = async () => {
                 return await res.json();
             }
         } catch (err) {
-            console.warn('Home Assistant direct fetch states error:', err);
+            console.warn('[HA Service] Direct states fetch error:', err.message);
         }
     }
 
@@ -107,7 +117,7 @@ export const callHaService = async (domain, service, serviceData = {}) => {
             return { success: true, data: result };
         }
     } catch (e) {
-        // Proxy failed
+        console.warn('[HA Service] Call service proxy error:', e.message);
     }
 
     // Attempt 2: Direct call
@@ -127,7 +137,7 @@ export const callHaService = async (domain, service, serviceData = {}) => {
             }
             return { success: false, status: res.status };
         } catch (err) {
-            console.error('Home Assistant service call error:', err);
+            console.error('[HA Service] Direct service call error:', err);
             return { success: false, error: err.message };
         }
     }
@@ -138,10 +148,26 @@ export const callHaService = async (domain, service, serviceData = {}) => {
 export const toggleHaEntity = async (entityId) => {
     const domain = entityId.split('.')[0];
     let service = 'toggle';
-    if (domain === 'scene') service = 'turn_on';
-    if (domain === 'script') service = 'turn_on';
-    if (domain === 'lock') service = 'toggle';
-    if (domain === 'cover') service = 'toggle';
+    let serviceData = { entity_id: entityId };
 
-    return await callHaService(domain, service, { entity_id: entityId });
+    if (domain === 'scene' || domain === 'script') {
+        service = 'turn_on';
+    } else if (domain === 'lock') {
+        service = 'toggle';
+    } else if (domain === 'cover') {
+        service = 'toggle';
+    } else if (domain === 'vacuum') {
+        service = 'start_pause';
+    } else if (domain === 'automation') {
+        service = 'trigger';
+    } else if (domain === 'input_boolean') {
+        service = 'toggle';
+    } else if (domain === 'fan') {
+        service = 'toggle';
+    } else if (domain === 'climate') {
+        service = 'set_hvac_mode';
+        serviceData = { entity_id: entityId, hvac_mode: 'heat_cool' };
+    }
+
+    return await callHaService(domain, service, serviceData);
 };

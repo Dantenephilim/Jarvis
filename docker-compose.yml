@@ -34,6 +34,8 @@ services:
     volumes:
       # Mount host's /proc so we can read real system stats (Linux / WSL)
       - /proc:/host/proc:ro
+      # Mount host project root to dynamically read and write .env
+      - ./:/host-project
     environment:
       - HOST_PROC=/host/proc
       - PORT=3001
@@ -41,6 +43,8 @@ services:
       - VITE_HA_TOKEN=${VITE_HA_TOKEN:-${HA_TOKEN:-}}
       - HA_URL=${HA_URL:-${VITE_HA_URL:-}}
       - HA_TOKEN=${HA_TOKEN:-${VITE_HA_TOKEN:-}}
+      - VITE_N8N_WEBHOOK_URL=${VITE_N8N_WEBHOOK_URL:-}
+      - N8N_WEBHOOK_URL=${N8N_WEBHOOK_URL:-}
     networks:
       - jarvis-net
 
