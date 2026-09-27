@@ -8,25 +8,21 @@ export const getJarvisAnalyser = () => sharedAnalyser;
 
 export const useJarvisLogic = () => {
     const envWebhook = import.meta.env.VITE_N8N_WEBHOOK_URL;
-    const DEFAULT_N8N_URL = envWebhook ? envWebhook : "/api/webhook/1faaf855-bd93-4b57-a298-8bdd00e419da";
+    const DEFAULT_N8N_URL = envWebhook ? envWebhook : "http://10.0.0.141:5678/webhook/fbb90c0a-03c0-4c21-a5bf-dc85cf102a2a";
 
-    // Normalize: if stored URL is any full nexotechx URL, use the Vite proxy path instead
+    // Auto-migrate from old nexotechx or stale endpoints to local n8n
     const normalizeN8nUrl = (url) => {
-        if (!url) return normalizeN8nUrl(DEFAULT_N8N_URL);
-        if (url.includes('nexotechx.com')) {
-            try {
-                const parsedUrl = new URL(url);
-                // e.g. https://n8n.nexotechx.com/webhook/1234 -> /api/webhook/1234
-                return `/api${parsedUrl.pathname}${parsedUrl.search}`;
-            } catch (e) {
-                return DEFAULT_N8N_URL;
-            }
+        if (!url || url.includes('1faaf855') || url.includes('nexotechx.com')) {
+            return DEFAULT_N8N_URL;
         }
         return url;
     };
 
     const storedUrl = localStorage.getItem('n8n_webhook_url');
     const initialUrl = normalizeN8nUrl(storedUrl);
+    if (storedUrl !== initialUrl) {
+        localStorage.setItem('n8n_webhook_url', initialUrl);
+    }
 
     const [n8nUrl, setN8nUrl] = useState(initialUrl);
     const getInitialLogs = () => {
@@ -34,7 +30,7 @@ export const useJarvisLogic = () => {
             const stored = localStorage.getItem('jarvis_console_logs');
             if (stored) return JSON.parse(stored);
         } catch (e) { }
-        return ['SYSTEM: J.A.R.V.I.S. initialized.', 'SYSTEM: Connection to core established.'];
+        return ['SYSTEM: J.A.R.V.I.S. initialized.', 'SYSTEM: Core linked to Local n8n [10.0.0.141].'];
     };
 
     const [status, setStatus] = useState('idle');
@@ -54,6 +50,16 @@ export const useJarvisLogic = () => {
         });
         setTranscript(text);
     };
+
+    // Pre-warm Web Speech voices for 0ms speech synthesis start
+    useEffect(() => {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.getVoices();
+            window.speechSynthesis.onvoiceschanged = () => {
+                window.speechSynthesis.getVoices();
+            };
+        }
+    }, []);
 
     const recognitionRef = useRef(null);
     const audioRef = useRef(null);

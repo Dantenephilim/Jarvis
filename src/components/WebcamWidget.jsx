@@ -1,12 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Camera, AlertCircle, Eye, EyeOff, ShieldAlert } from 'lucide-react';
 
-const isTailscaleConnection = () => {
-    const host = window.location.hostname;
-    // Tailscale MagicDNS (.ts.net), Tailscale CGNAT IPs (100.x.y.z), localhost or HTTPS
-    return host.endsWith('.ts.net') || host.startsWith('100.') || host === 'localhost' || host === '127.0.0.1';
-};
-
 const WebcamWidget = ({ isActive }) => {
     const videoRef = useRef(null);
     const [hasError, setHasError] = useState(false);
@@ -22,17 +16,9 @@ const WebcamWidget = ({ isActive }) => {
                 setHasError(false);
                 setErrorMessage('');
 
-                // Enforce Tailscale connection requirement
-                if (!isTailscaleConnection()) {
-                    setHasError(true);
-                    setErrorMessage('TAILSCALE LINK REQUIRED');
-                    setIsStreaming(false);
-                    return;
-                }
-
                 if (!navigator?.mediaDevices?.getUserMedia) {
                     setHasError(true);
-                    setErrorMessage('HTTPS / TAILSCALE REQUIRED');
+                    setErrorMessage('CAMERA ACCESS REQUIRED');
                     setIsStreaming(false);
                     return;
                 }
