@@ -10,6 +10,11 @@ const SettingsModal = ({ isOpen, onClose, onSave }) => {
     const [testMessage, setTestMessage] = useState('');
     const [theme, setTheme] = useState('VoiceCore');
 
+    const [haUrl, setHaUrl] = useState('');
+    const [haToken, setHaToken] = useState('');
+    const [haTestStatus, setHaTestStatus] = useState('');
+    const [haTestMessage, setHaTestMessage] = useState('');
+
     const DEFAULT_N8N_URL = 'https://n8n.nexotechx.com/webhook/1faaf855-bd93-4b57-a298-8bdd00e419da';
     const DEFAULT_VOICE_ID = 'DMyrgzQFny3JI1Y1paM5'; // Default Jarvis
 
@@ -17,8 +22,12 @@ const SettingsModal = ({ isOpen, onClose, onSave }) => {
         const storedId = localStorage.getItem('eleven_agent_id');
         let storedUrl = localStorage.getItem('n8n_webhook_url');
         const storedVoice = localStorage.getItem('eleven_voice_id');
+        const storedHaUrl = localStorage.getItem('ha_url');
+        const storedHaToken = localStorage.getItem('ha_token');
         
         if (storedId) setAgentId(storedId);
+        if (storedHaUrl) setHaUrl(storedHaUrl);
+        if (storedHaToken) setHaToken(storedHaToken);
         
         if (storedUrl) {
             // Hotfix: only clean up port 5678 if present on nexotechx domain
@@ -43,15 +52,51 @@ const SettingsModal = ({ isOpen, onClose, onSave }) => {
 
         setTestStatus('');
         setTestMessage('');
+        setHaTestStatus('');
+        setHaTestMessage('');
     }, [isOpen]);
 
     const handleSave = () => {
         localStorage.setItem('eleven_agent_id', agentId);
         localStorage.setItem('n8n_webhook_url', n8nUrl);
         localStorage.setItem('eleven_voice_id', voiceId);
+        localStorage.setItem('ha_url', haUrl);
+        localStorage.setItem('ha_token', haToken);
         localStorage.setItem('jarvis_theme', theme);
-        onSave({ agentId, n8nUrl, voiceId, theme });
+        onSave({ agentId, n8nUrl, voiceId, theme, haUrl, haToken });
         onClose();
+    };
+
+    const handleTestHa = async () => {
+        if (!haUrl) {
+            setHaTestStatus('error');
+            setHaTestMessage('Por favor ingresa la URL de Home Assistant');
+            return;
+        }
+        setHaTestStatus('testing');
+        setHaTestMessage('Conectando a Home Assistant...');
+
+        try {
+            const cleanUrl = haUrl.replace(/\/$/, '');
+            const res = await fetch(`${cleanUrl}/api/`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${haToken}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setHaTestStatus('success');
+                setHaTestMessage(`HA Conectado: ${data.message || 'API OK'}`);
+            } else {
+                setHaTestStatus('error');
+                setHaTestMessage(`Error HA: HTTP ${res.status}`);
+            }
+        } catch (err) {
+            setHaTestStatus('error');
+            setHaTestMessage(`Error de red: ${err.message}`);
+        }
     };
 
     const handleTestConnection = () => {
@@ -167,6 +212,50 @@ const SettingsModal = ({ isOpen, onClose, onSave }) => {
                             </div>
                         )}
                         <small className="hint">Production Webhook URL for logic processing</small>
+                    </div>
+
+                    <div className="input-group" style={{ marginTop: '20px' }}>
+                        <label className="text-emerald">HOME ASSISTANT URL</label>
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                            <input
+                                type="text"
+                                value={haUrl}
+                                onChange={(e) => setHaUrl(e.target.value)}
+                                placeholder="http://10.0.0.X:8123 o https://..."
+                                className="cyber-input"
+                                style={{ flex: 1 }}
+                            />
+                            <button
+                                className="cyber-btn"
+                                style={{ padding: '0 15px', fontSize: '0.8rem', whiteSpace: 'nowrap' }}
+                                onClick={handleTestHa}
+                                disabled={haTestStatus === 'testing'}
+                            >
+                                {haTestStatus === 'testing' ? '...' : 'TEST HA'}
+                            </button>
+                        </div>
+                        {haTestMessage && (
+                            <div style={{
+                                marginTop: '5px',
+                                fontSize: '0.8rem',
+                                color: haTestStatus === 'success' ? 'var(--emerald-glow)' : 'var(--alert-color)'
+                            }}>
+                                {haTestMessage}
+                            </div>
+                        )}
+                        <small className="hint">IP o dominio de Home Assistant para control de domótica.</small>
+                    </div>
+
+                    <div className="input-group" style={{ marginTop: '20px' }}>
+                        <label className="text-emerald">HOME ASSISTANT TOKEN (Long-Lived)</label>
+                        <input
+                            type="password"
+                            value={haToken}
+                            onChange={(e) => setHaToken(e.target.value)}
+                            placeholder="eyJhbGciOiJIUzI1NiIsIn..."
+                            className="cyber-input"
+                        />
+                        <small className="hint">Token de acceso de larga duración creado en el perfil de Home Assistant.</small>
                     </div>
 
                     <div className="input-group" style={{ marginTop: '20px' }}>

@@ -16,7 +16,7 @@ import MusicWidget from './components/MusicWidget';
 import AudioVisualizerWidget from './components/AudioVisualizerWidget';
 import SuitWidget from './components/SuitWidget';
 import HoloModelWidget from './components/HoloModelWidget';
-import LogoWidget from './components/LogoWidget';
+import SmartHomeWidget from './components/SmartHomeWidget';
 import { Mic, MicOff, Settings, Wifi, WifiOff, Send, Camera, CameraOff, Music } from 'lucide-react';
 
 const GlobalLoader = ({ onReady }) => {
@@ -217,9 +217,9 @@ function App() {
 
       {/* FULL SCREEN HUD LAYOUT - CORNER ANCHORED */}
       
-      {/* TOP CENTER ANCHOR */}
-      <div className="hud-layer" style={{ transformOrigin: 'top center', transform: `scale(${scale})` }}>
-        <LogoWidget />
+      {/* TOP CENTER ANCHOR (HOME AUTOMATION / DOMOTICA) */}
+      <div className="hud-layer" style={{ transformOrigin: 'top center', transform: `scale(${scale})`, zIndex: 60 }}>
+        <SmartHomeWidget onActionSound={sounds.click} />
       </div>
 
       {/* TOP LEFT ANCHOR (Sphere Suit + Shortcuts) */}
