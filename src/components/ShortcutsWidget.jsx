@@ -5,17 +5,17 @@ const ShortcutsWidget = () => {
         <div style={{
             position: 'absolute',
             left: '40px',
-            top: '200px',
+            top: '185px',
             display: 'flex',
             flexDirection: 'column',
-            gap: '15px',
+            gap: '8px',
             fontFamily: 'var(--font-main)',
             fontSize: '0.65rem',
             textAlign: 'right'
         }}>
-            <div style={{ borderBottom: '1px solid var(--primary-glow)', paddingBottom: '10px', marginBottom: '10px' }}>
-                <div style={{ color: '#fff', letterSpacing: '2px', fontSize: '0.9rem', width:'150px' }}>J.A.R.V.I.S OS</div>
-                <div style={{ color: '#555' }}>Ver 2.3.0</div>
+            <div style={{ borderBottom: '1px solid var(--primary-glow)', paddingBottom: '4px', marginBottom: '6px' }}>
+                <div style={{ color: '#fff', letterSpacing: '2px', fontSize: '0.85rem', width:'150px' }}>J.A.R.V.I.S OS</div>
+                <div style={{ color: '#555', fontSize: '0.6rem' }}>Ver 2.3.0</div>
             </div>
 
             {

@@ -140,9 +140,9 @@ const MusicWidget = ({ isActive, onToggle }) => {
                 </button>
             </div>
 
-            <div className="music-indicator" style={{ display: 'flex', flexDirection: 'column', gap: '5px', padding: '10px' }}>
-                <canvas ref={canvasRef} width="180" height="40" style={{ borderBottom: '1px solid rgba(0, 243, 255, 0.3)' }} />
-                <span style={{ fontSize: '0.65rem', letterSpacing: '2px', color: 'var(--primary-glow)', textAlign: 'center' }}>
+            <div className="music-indicator" style={{ display: 'flex', flexDirection: 'column', gap: '4px', padding: '6px 10px' }}>
+                <canvas ref={canvasRef} width="180" height="26" style={{ borderBottom: '1px solid rgba(0, 243, 255, 0.3)' }} />
+                <span style={{ fontSize: '0.6rem', letterSpacing: '2px', color: 'var(--primary-glow)', textAlign: 'center' }}>
                     AUDIO {isPlaying ? 'ONLINE' : 'PAUSED'}
                 </span>
             </div>
@@ -150,7 +150,7 @@ const MusicWidget = ({ isActive, onToggle }) => {
             <style jsx="true">{`
                 .music-container {
                     position: absolute;
-                    top: 380px;
+                    top: 350px;
                     left: 30px;
                     width: 200px;
                     background: rgba(0, 5, 10, 0.6);
@@ -161,7 +161,7 @@ const MusicWidget = ({ isActive, onToggle }) => {
                     border-radius: 4px;
                 }
                 .music-header {
-                    padding: 8px 10px;
+                    padding: 5px 10px;
                     display: flex;
                     align-items: center;
                     gap: 8px;

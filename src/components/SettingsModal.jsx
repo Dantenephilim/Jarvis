@@ -10,7 +10,7 @@ const SettingsModal = ({ isOpen, onClose, onSave }) => {
     const [testMessage, setTestMessage] = useState('');
     const [theme, setTheme] = useState('VoiceCore');
 
-    const DEFAULT_N8N_URL = 'https://n8n.nexotechx.com/webhook/fbb90c0a-03c0-4c21-a5bf-dc85cf102a2a';
+    const DEFAULT_N8N_URL = 'https://n8n.nexotechx.com/webhook/1faaf855-bd93-4b57-a298-8bdd00e419da';
     const DEFAULT_VOICE_ID = 'DMyrgzQFny3JI1Y1paM5'; // Default Jarvis
 
     useEffect(() => {
@@ -21,18 +21,14 @@ const SettingsModal = ({ isOpen, onClose, onSave }) => {
         if (storedId) setAgentId(storedId);
         
         if (storedUrl) {
-            // Hotfix: clean up old deprecated webhook IDs or port 5678
-            if (storedUrl.includes('1faaf855') || storedUrl.includes('TU_WEBHOOK') || storedUrl.includes('production_link')) {
-                storedUrl = DEFAULT_N8N_URL;
-                localStorage.setItem('n8n_webhook_url', DEFAULT_N8N_URL);
-            } else if (storedUrl.includes(':5678')) {
-                storedUrl = storedUrl.replace(':5678', '');
+            // Hotfix: only clean up port 5678 if present on nexotechx domain
+            if (storedUrl.includes('nexotechx.com:5678')) {
+                storedUrl = storedUrl.replace('nexotechx.com:5678', 'nexotechx.com');
                 localStorage.setItem('n8n_webhook_url', storedUrl);
             }
             setN8nUrl(storedUrl);
         } else {
             setN8nUrl(DEFAULT_N8N_URL);
-            localStorage.setItem('n8n_webhook_url', DEFAULT_N8N_URL);
         }
         
         if (storedVoice) {

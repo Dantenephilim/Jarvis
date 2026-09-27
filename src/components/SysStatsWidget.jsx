@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 
 const TaskGraph = ({ label, color, history, unit, maxVal }) => {
     const width = 200;
-    const height = 60;
+    const height = 40;
     
     // Normalize history to 0-height
     const points = history.map((val, i) => {
@@ -32,7 +32,7 @@ const TaskGraph = ({ label, color, history, unit, maxVal }) => {
              </svg>
              
              {/* Label */}
-             <div style={{ position: 'absolute', top: '3px', left: '5px', fontSize: '11px', color: '#fff', fontWeight: 'bold', textShadow: `0 0 5px ${color}`, letterSpacing: '1px' }}>
+             <div style={{ position: 'absolute', top: '2px', left: '5px', fontSize: '10px', color: '#fff', fontWeight: 'bold', textShadow: `0 0 5px ${color}`, letterSpacing: '1px' }}>
                 {label} {currentValue}{unit}
              </div>
         </div>
@@ -102,16 +102,14 @@ const SysStatsWidget = () => {
         <div style={{
             position: 'absolute',
             left: '30px',
-            top: '480px',
+            top: '435px',
             display: 'flex',
             flexDirection: 'column',
-            gap: '15px',
+            gap: '5px',
             fontFamily: 'var(--font-main)'
         }}>
-
-
             {/* Graphs - Unified Color Scheme */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                 <TaskGraph label="CPU" color="#00f3ff" history={cpuHistory} unit="%" maxVal={100} />
                 <TaskGraph label="MEM" color="#00f3ff" history={ramHistory} unit="%" maxVal={100} />
                 <TaskGraph label="NET" color="#00f3ff" history={netHistory} unit=" Mb/s" maxVal={100} />

@@ -186,9 +186,9 @@ const IronManModel = () => {
       onPointerUp={handlePointerUp}
       onPointerOut={(e) => { handlePointerOut(e); handlePointerUp(e); }}
       onPointerOver={handlePointerOver}
-      scale={0.012} 
+      scale={0.015} 
     >
-      <Center position={[0, 0.2, 0]}>
+      <Center>
         <Bvh firstHitOnly>
           <primitive object={scene} />
         </Bvh>
@@ -201,29 +201,27 @@ const IronManModel = () => {
             <div style={{ position: 'absolute', top: '-2px', left: '-2px', width: '4px', height: '4px', background: '#00f3ff', borderRadius: '50%', boxShadow: '0 0 5px #00f3ff' }} />
             
             {/* The diagonal line starting at the dot (0,0) and going up-right */}
-            <svg style={{ position: 'absolute', left: 0, top: '-30px', width: '30px', height: '30px', overflow: 'visible' }}>
-              <line x1="0" y1="30" x2="30" y2="0" stroke="#00f3ff" strokeWidth="1" />
-              <circle cx="30" cy="0" r="2" fill="#00f3ff" />
+            <svg style={{ position: 'absolute', left: 0, top: '-40px', width: '40px', height: '40px', overflow: 'visible' }}>
+              <line x1="0" y1="40" x2="40" y2="0" stroke="#00f3ff" strokeWidth="1" />
+              <circle cx="40" cy="0" r="2" fill="#00f3ff" />
             </svg>
 
-            {/* The text box anchored at the end of the line */}
+            {/* The text box anchored at the end of the line (up and to the right) */}
             <div style={{ 
               position: 'absolute', 
-              left: '30px', 
-              bottom: '30px', 
+              left: '40px', 
+              bottom: '40px', 
               border: 'none', 
-              background: 'rgba(0, 10, 20, 0.85)', 
-              padding: '4px 8px', 
-              borderRadius: '2px',
-              fontSize: '10px', 
+              background: 'transparent', 
+              padding: '6px 10px', 
+              fontSize: '11px', 
               color: '#fff', 
               whiteSpace: 'nowrap',
               fontFamily: 'var(--font-main)',
               letterSpacing: '1px',
-              borderLeft: '2px solid #00f3ff',
               textShadow: '0 0 5px rgba(0,243,255,0.5)'
             }}>
-              <span style={{ color: '#00f3ff', marginRight: '4px' }}>SYS.TGT:</span>
+              <span style={{ color: '#00f3ff', marginRight: '5px' }}>SYS.TGT:</span>
               {hoveredInfo.name}
             </div>
           </div>
@@ -235,38 +233,19 @@ const IronManModel = () => {
 
 const HoloModelWidget = () => {
   return (
-    <div className="holo-model-container">
-      <div className="holo-canvas-wrapper">
+    <div style={{ position: 'absolute', bottom: '25px', left: '15px', width: '280px', height: '360px', zIndex: 15, overflow: 'visible' }}>
+      <div style={{ width: '100%', height: '100%', overflow: 'visible' }}>
         <Canvas 
-          camera={{ position: [0, 0, 7.2], fov: 45 }} 
-          style={{ width: '100%', height: '100%' }}
+          camera={{ position: [0, 0, 7.5], fov: 45 }} 
+          style={{ width: '100%', height: '100%', overflow: 'visible' }}
         >
-          <ambientLight intensity={0.6} />
-          <pointLight position={[10, 10, 10]} intensity={1.2} color="#00f3ff" />
-          <pointLight position={[-10, -10, -10]} intensity={0.5} color="#0088ff" />
+          <ambientLight intensity={0.5} />
+          <pointLight position={[10, 10, 10]} intensity={1} color="#00f3ff" />
           <React.Suspense fallback={null}>
             <IronManModel />
           </React.Suspense>
         </Canvas>
       </div>
-
-      <style jsx="true">{`
-        .holo-model-container {
-          position: absolute;
-          bottom: 35px;
-          left: 30px;
-          width: 280px;
-          height: 360px;
-          overflow: visible;
-          z-index: 25;
-          pointer-events: auto;
-        }
-        .holo-canvas-wrapper {
-          width: 100%;
-          height: 100%;
-          position: relative;
-        }
-      `}</style>
     </div>
   );
 };
