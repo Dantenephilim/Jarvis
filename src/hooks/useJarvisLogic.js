@@ -81,75 +81,96 @@ export const useJarvisLogic = () => {
     useEffect(() => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) {
-            addLog("ERROR: BROWSER DOES NOT SUPPORT SPEECH RECOGNITION.");
+            addLog("ERROR: Browser does not support Web Speech API (Use Chrome/Edge).");
             return;
         }
 
-        const recognition = new SpeechRecognition();
-        recognition.continuous = false;
-        recognition.lang = 'es-ES';
-        recognition.interimResults = false;
+        const createRecognition = () => {
+            const rec = new SpeechRecognition();
+            rec.continuous = false;
+            rec.lang = 'es-ES';
+            rec.interimResults = false;
 
-        recognition.onstart = () => {
-            if (!isMutedRef.current && statusRef.current !== 'speaking' && statusRef.current !== 'processing') {
-                setStatus('listening');
-            }
-        };
-
-        recognition.onend = () => {
-            // Auto restart logic — skip if mic is blocked, muted, or jarvis is busy.
-            setTimeout(() => {
-                if (!isBlockedRef.current && !isMutedRef.current && statusRef.current !== 'speaking' && statusRef.current !== 'processing') {
-                    try { recognition.start(); } catch(e) {}
+            rec.onstart = () => {
+                if (!isMutedRef.current && statusRef.current !== 'speaking' && statusRef.current !== 'processing') {
+                    setStatus('listening');
                 }
-            }, 300);
-        };
+            };
 
-        recognition.onerror = (event) => {
-            // Silently ignore non-critical errors
-            if (event.error === 'no-speech' || event.error === 'aborted') return;
+            rec.onend = () => {
+                // Auto restart logic — skip if mic is blocked, muted, or jarvis is busy.
+                setTimeout(() => {
+                    if (!isBlockedRef.current && !isMutedRef.current && statusRef.current !== 'speaking' && statusRef.current !== 'processing') {
+                        try { recognitionRef.current?.start(); } catch(e) {}
+                    }
+                }, 200);
+            };
 
-            console.error('Speech recognition error', event.error);
-            addLog(`ERROR: ${event.error}`);
+            rec.onerror = (event) => {
+                if (event.error === 'no-speech' || event.error === 'aborted') return;
 
-            // If the browser blocks the microphone (permissions or HTTPS issue)
-            if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-                isBlockedRef.current = true;
-                isMutedRef.current = true;
-                addLog("SYSTEM: Mic Blocked! Click the Red Mic button manually.");
-                setIsMuted(true);
-                setStatus('idle');
-                return; // Do NOT restart
-            }
+                console.error('Speech recognition error', event.error);
 
-            // For other errors, quietly restart after a short delay.
-            setTimeout(() => {
-                if (!isBlockedRef.current && !isMutedRef.current && statusRef.current !== 'speaking' && statusRef.current !== 'processing') {
-                    try { recognition.start(); } catch(e) {}
+                if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+                    isBlockedRef.current = true;
+                    isMutedRef.current = true;
+                    const isHttps = window.location.protocol === 'https:';
+                    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                    
+                    if (!isHttps && !isLocal) {
+                        addLog("SECURITY: Web Speech requires HTTPS or chrome://flags for LAN IPs.");
+                        addLog(`TIP: Connect via https://${window.location.hostname} or enable chrome://flags`);
+                    } else {
+                        addLog("SYSTEM: Microphone permission denied. Click the Mic icon to allow.");
+                    }
+                    setIsMuted(true);
+                    setStatus('idle');
+                    return;
                 }
-            }, 500);
+
+                // For transient errors, quietly restart
+                setTimeout(() => {
+                    if (!isBlockedRef.current && !isMutedRef.current && statusRef.current !== 'speaking' && statusRef.current !== 'processing') {
+                        try { recognitionRef.current?.start(); } catch(e) {}
+                    }
+                }, 400);
+            };
+
+            rec.onresult = (event) => {
+                if (isMutedRef.current || statusRef.current === 'speaking' || statusRef.current === 'processing') return; 
+                const text = event.results[0][0].transcript;
+                addLog(`USER: ${text}`);
+                enviarAJarvis(text);
+            };
+
+            return rec;
         };
 
-        recognition.onresult = (event) => {
-            if (isMutedRef.current || statusRef.current === 'speaking' || statusRef.current === 'processing') return; 
-            const text = event.results[0][0].transcript;
-            addLog(`USER: ${text}`);
-            enviarAJarvis(text);
-        };
-
+        const recognition = createRecognition();
         recognitionRef.current = recognition;
 
-        // Kick off manually first time with a slight delay so browser is ready
+        // Auto unlock audio context & mic on first user click or keypress
+        const handleInitialInteraction = () => {
+            if (statusRef.current === 'idle' && !isMutedRef.current) {
+                try { recognitionRef.current?.start(); } catch(e) {}
+            }
+        };
+        window.addEventListener('click', handleInitialInteraction, { once: true });
+        window.addEventListener('keydown', handleInitialInteraction, { once: true });
+
+        // Kick off with slight delay
         setTimeout(() => {
             if (!isMutedRef.current && statusRef.current === 'idle') {
-                try { recognition.start(); } catch(e) {}
+                try { recognitionRef.current?.start(); } catch(e) {}
             }
-        }, 1000);
+        }, 800);
 
         return () => {
+            window.removeEventListener('click', handleInitialInteraction);
+            window.removeEventListener('keydown', handleInitialInteraction);
             if (recognitionRef.current) recognitionRef.current.abort();
         };
-    }, []); // Empty dependency array ensures this doesn't endlessly unmount/remount
+    }, []);
 
     // Push-to-Talk (PTT) with Alt key
     const isAltPressedRef = useRef(false);

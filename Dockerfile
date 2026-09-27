@@ -23,9 +23,17 @@ COPY . .
 RUN npm run build
 
 # ──────────────────────────────────────────────
-# Stage 2: Serve with Nginx
+# Stage 2: Serve with Nginx + SSL
 # ──────────────────────────────────────────────
 FROM nginx:alpine
+
+# Install OpenSSL and generate self-signed SSL cert for secure mic/cam access
+RUN apk add --no-cache openssl && \
+    mkdir -p /etc/nginx/ssl && \
+    openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
+    -keyout /etc/nginx/ssl/jarvis.key \
+    -out /etc/nginx/ssl/jarvis.crt \
+    -subj "/C=US/ST=Stark/L=Malibu/O=StarkIndustries/CN=jarvis.local"
 
 # Remove default nginx config
 RUN rm /etc/nginx/conf.d/default.conf
@@ -36,6 +44,6 @@ COPY nginx/nginx.conf /etc/nginx/conf.d/jarvis.conf
 # Copy built React app from Stage 1
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-EXPOSE 80
+EXPOSE 80 443
 
 CMD ["nginx", "-g", "daemon off;"]
