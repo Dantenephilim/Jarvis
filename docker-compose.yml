@@ -31,6 +31,8 @@ services:
       dockerfile: Dockerfile
     container_name: jarvis-stats
     restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       # Mount host's /proc so we can read real system stats (Linux / WSL)
       - /proc:/host/proc:ro
@@ -43,6 +45,12 @@ services:
       - VITE_HA_TOKEN=${VITE_HA_TOKEN:-${HA_TOKEN:-}}
       - HA_URL=${HA_URL:-${VITE_HA_URL:-}}
       - HA_TOKEN=${HA_TOKEN:-${VITE_HA_TOKEN:-}}
+      - HA_API=${HA_API:-}
+      - HA_API_KEY=${HA_API_KEY:-}
+      - HOME_ASSISTANT_URL=${HOME_ASSISTANT_URL:-}
+      - HOME_ASSISTANT_TOKEN=${HOME_ASSISTANT_TOKEN:-}
+      - HOME_ASSISTANT_API=${HOME_ASSISTANT_API:-}
+      - HOME_ASSISTANT_API_KEY=${HOME_ASSISTANT_API_KEY:-}
       - VITE_N8N_WEBHOOK_URL=${VITE_N8N_WEBHOOK_URL:-}
       - N8N_WEBHOOK_URL=${N8N_WEBHOOK_URL:-}
     networks:

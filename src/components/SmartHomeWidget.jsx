@@ -3,7 +3,7 @@ import {
     Home, Lightbulb, Power, Lock, Unlock, Thermometer, 
     ChevronDown, ChevronUp, Sparkles, Shield, RefreshCw,
     Sliders, Tv, Eye, Fan, Activity, Disc, Zap, Flame,
-    AlertCircle, Radio, Play, CheckCircle
+    AlertCircle, Radio, Play, CheckCircle, Settings, WifiOff
 } from 'lucide-react';
 import { getHaConfig, fetchHaStates, toggleHaEntity, callHaService } from '../services/homeAssistant';
 import './SmartHomeWidget.css';
@@ -20,13 +20,14 @@ const DEFAULT_DEMO_ENTITIES = [
     { entity_id: 'scene.secure_home', name: 'PROTOCOLO SEGURO', domain: 'scene', state: 'ready', icon: Shield, val: 'ARMED' }
 ];
 
-const SmartHomeWidget = ({ onActionSound }) => {
+const SmartHomeWidget = ({ onActionSound, onOpenSettings }) => {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [isConnected, setIsConnected] = useState(false);
     const [entities, setEntities] = useState(DEFAULT_DEMO_ENTITIES);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [activeTab, setActiveTab] = useState('ALL');
     const [searchQuery, setSearchQuery] = useState('');
+    const [connectionDetail, setConnectionDetail] = useState('');
 
     const loadStates = useCallback(async () => {
         setIsRefreshing(true);
@@ -34,13 +35,14 @@ const SmartHomeWidget = ({ onActionSound }) => {
             const rawStates = await fetchHaStates();
             if (rawStates && Array.isArray(rawStates) && rawStates.length > 0) {
                 setIsConnected(true);
+                setConnectionDetail(`${rawStates.length} DISPOSITIVOS`);
                 
                 // Parse and format ALL Home Assistant entities
                 const parsed = rawStates
                     .filter(e => {
                         if (!e.entity_id || !e.entity_id.includes('.')) return false;
                         const d = e.entity_id.split('.')[0];
-                        // Ignore noisy internal entities
+                        // Filter out noisy internal entities
                         if (['persistent_notification', 'zone', 'update', 'tts'].includes(d)) return false;
                         return true;
                     })
@@ -89,19 +91,47 @@ const SmartHomeWidget = ({ onActionSound }) => {
                 }
             } else {
                 setIsConnected(false);
+                setConnectionDetail('SIN CONEXIÓN HA');
             }
         } catch (err) {
             console.warn('[SmartHome] Error loading states:', err);
             setIsConnected(false);
+            setConnectionDetail('ERROR HA');
         } finally {
             setIsRefreshing(false);
         }
     }, []);
 
+    // Initial mount: load server config first, then fetch states
     useEffect(() => {
-        loadStates();
-        const interval = setInterval(loadStates, 6000);
-        return () => clearInterval(interval);
+        let isMounted = true;
+
+        const initConfigAndLoad = async () => {
+            try {
+                const res = await fetch('/api/config');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.haUrl) {
+                        localStorage.setItem('ha_url', data.haUrl);
+                    }
+                    if (data.haToken) {
+                        localStorage.setItem('ha_token', data.haToken);
+                    }
+                }
+            } catch (e) {
+                // Ignore config fetch error
+            }
+            if (isMounted) {
+                loadStates();
+            }
+        };
+
+        initConfigAndLoad();
+        const interval = setInterval(loadStates, 5000);
+        return () => {
+            isMounted = false;
+            clearInterval(interval);
+        };
     }, [loadStates]);
 
     const handleToggle = async (entity) => {
@@ -183,7 +213,10 @@ const SmartHomeWidget = ({ onActionSound }) => {
                 <div className="hud-title-wrap">
                     <Home size={14} color="#00f3ff" />
                     <span className="hud-title">HOME AUTOMATION MATRIX</span>
-                    <span className={`hud-status-badge ${isConnected ? 'online' : 'demo'}`}>
+                    <span 
+                        className={`hud-status-badge ${isConnected ? 'online' : 'demo'}`}
+                        title={isConnected ? 'Conectado a Home Assistant' : 'Haz clic en Ajustes (⚙️) para configurar URL y Token de HA'}
+                    >
                         {isConnected ? `HA ONLINE (${counts.all})` : 'DEMO MATRIX (CONFIGURA HA)'}
                     </span>
                 </div>
