@@ -219,7 +219,7 @@ function App() {
       
       {/* TOP CENTER ANCHOR (HOME AUTOMATION / DOMOTICA) */}
       <div className="hud-layer" style={{ transformOrigin: 'top center', transform: `scale(${scale})`, zIndex: 60 }}>
-        <SmartHomeWidget onActionSound={sounds.click} />
+        <SmartHomeWidget onActionSound={sounds.click} onOpenSettings={handleOpenSettings} />
       </div>
 
       {/* TOP LEFT ANCHOR (Sphere Suit + Shortcuts) */}

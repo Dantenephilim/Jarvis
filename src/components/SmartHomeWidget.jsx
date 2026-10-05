@@ -215,7 +215,14 @@ const SmartHomeWidget = ({ onActionSound, onOpenSettings }) => {
                     <span className="hud-title">HOME AUTOMATION MATRIX</span>
                     <span 
                         className={`hud-status-badge ${isConnected ? 'online' : 'demo'}`}
-                        title={isConnected ? 'Conectado a Home Assistant' : 'Haz clic en Ajustes (⚙️) para configurar URL y Token de HA'}
+                        title={isConnected ? 'Conectado a Home Assistant' : 'Haz clic para abrir Ajustes (⚙️)'}
+                        onClick={(e) => {
+                            if (!isConnected && onOpenSettings) {
+                                e.stopPropagation();
+                                onOpenSettings();
+                            }
+                        }}
+                        style={{ cursor: !isConnected ? 'pointer' : 'default' }}
                     >
                         {isConnected ? `HA ONLINE (${counts.all})` : 'DEMO MATRIX (CONFIGURA HA)'}
                     </span>

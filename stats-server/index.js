@@ -25,7 +25,9 @@ function getEnvFileCandidates() {
         path.join(process.cwd(), '.env'),
         path.join(process.cwd(), '..', '.env'),
         '/home/dante/Jarvis/.env',
-        '/root/Jarvis/.env'
+        '/root/Jarvis/.env',
+        './.env',
+        '../.env'
     ];
 }
 
@@ -45,13 +47,19 @@ function parseEnvFile(filePath) {
     try {
         const content = fs.readFileSync(filePath, 'utf8');
         const env = {};
-        for (const line of content.split('\n')) {
-            const trimmed = line.trim();
+        for (let line of content.replace(/\r/g, '').split('\n')) {
+            let trimmed = line.trim();
             if (!trimmed || trimmed.startsWith('#')) continue;
+            // Remove 'export ' prefix if present
+            trimmed = trimmed.replace(/^export\s+/, '').trim();
             const idx = trimmed.indexOf('=');
             if (idx !== -1) {
                 const key = trimmed.slice(0, idx).trim();
                 let val = trimmed.slice(idx + 1).trim();
+                // Strip trailing comments (e.g. # comment) if not inside quotes
+                if (!val.startsWith('"') && !val.startsWith("'") && val.includes(' #')) {
+                    val = val.slice(0, val.indexOf(' #')).trim();
+                }
                 if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
                     val = val.slice(1, -1);
                 }
@@ -81,48 +89,78 @@ function getMergedEnv() {
 
 function getHaConfig() {
     const env = getMergedEnv();
-    
-    // Find URL
-    let url = (
-        env.HA_URL ||
-        env.VITE_HA_URL ||
-        env.HOME_ASSISTANT_URL ||
-        env.HASS_URL ||
-        env.HOMEASSISTANT_URL ||
-        env.HA_HOST ||
-        env.HOME_ASSISTANT_HOST ||
-        ''
-    ).trim();
+    let url = '';
+    let token = '';
 
-    // If HA_IP is provided
-    const ip = (env.HA_IP || env.HOME_ASSISTANT_IP || env.HASS_IP || '').trim();
-    if (!url && ip) {
-        url = ip.includes(':') ? `http://${ip}` : `http://${ip}:8123`;
+    // 1. URL key detection list
+    const urlKeys = [
+        'HA_URL', 'VITE_HA_URL', 'HOME_ASSISTANT_URL', 'HASS_URL', 'HOMEASSISTANT_URL',
+        'HA_IP', 'VITE_HA_IP', 'HOME_ASSISTANT_IP', 'HASS_IP', 'HOMEASSISTANT_IP',
+        'HA_HOST', 'HOME_ASSISTANT_HOST', 'HASS_HOST', 'HOMEASSISTANT_HOST',
+        'IP_HA', 'IP_HOMEASSISTANT', 'IP_HOME_ASSISTANT', 'IP', 'HOST'
+    ];
+
+    // 2. Token key detection list
+    const tokenKeys = [
+        'HA_TOKEN', 'VITE_HA_TOKEN', 'HOME_ASSISTANT_TOKEN', 'HASS_TOKEN', 'HOMEASSISTANT_TOKEN',
+        'HA_API_KEY', 'VITE_HA_API_KEY', 'HOME_ASSISTANT_API_KEY', 'HASS_API_KEY', 'HOMEASSISTANT_API_KEY',
+        'HA_API', 'VITE_HA_API', 'HOME_ASSISTANT_API', 'HASS_API', 'HOMEASSISTANT_API',
+        'API_KEY_HA', 'API_KEY_HOMEASSISTANT', 'API_KEY_HOME_ASSISTANT', 'API_KEY',
+        'SUPERVISOR_TOKEN', 'HA_BEARER_TOKEN', 'HA_KEY', 'LLAT', 'TOKEN', 'ACCESS_TOKEN'
+    ];
+
+    for (const k of urlKeys) {
+        if (env[k] && typeof env[k] === 'string' && env[k].trim()) {
+            url = env[k].trim();
+            break;
+        }
     }
 
-    // Find Token
-    let token = (
-        env.HA_TOKEN ||
-        env.VITE_HA_TOKEN ||
-        env.HOME_ASSISTANT_TOKEN ||
-        env.HASS_TOKEN ||
-        env.HOMEASSISTANT_TOKEN ||
-        env.HA_API ||
-        env.HA_API_KEY ||
-        env.HOME_ASSISTANT_API ||
-        env.HOME_ASSISTANT_API_KEY ||
-        env.HOMEASSISTANT_API ||
-        env.HOMEASSISTANT_API_KEY ||
-        env.SUPERVISOR_TOKEN ||
-        env.HASS_API_KEY ||
-        env.HA_BEARER_TOKEN ||
-        env.HA_KEY ||
-        env.LLAT ||
-        ''
-    ).trim();
+    for (const k of tokenKeys) {
+        if (env[k] && typeof env[k] === 'string' && env[k].trim()) {
+            token = env[k].trim();
+            break;
+        }
+    }
 
-    // Clean URL
+    // 3. Fallback: Fuzzy scan for any JWT token (starts with eyJ or length > 60)
+    if (!token) {
+        for (const [key, val] of Object.entries(env)) {
+            if (typeof val === 'string') {
+                const cleanVal = val.trim();
+                if ((cleanVal.startsWith('eyJ') || cleanVal.startsWith('Bearer eyJ') || (cleanVal.length > 60 && !cleanVal.includes(' '))) &&
+                    !key.includes('ELEVEN') && !key.includes('N8N')) {
+                    token = cleanVal;
+                    break;
+                }
+            }
+        }
+    }
+
+    // 4. Fallback: Fuzzy scan for URL or IP
+    if (!url) {
+        for (const [key, val] of Object.entries(env)) {
+            const k = key.toLowerCase();
+            if ((k.includes('ha') || k.includes('hass') || k.includes('assistant')) && (k.includes('url') || k.includes('ip') || k.includes('host'))) {
+                if (typeof val === 'string' && val.trim()) {
+                    url = val.trim();
+                    break;
+                }
+            }
+        }
+    }
+
+    // Clean Token
+    if (token) {
+        token = token.replace(/^['"]|['"]$/g, '').trim();
+        if (token.startsWith('Bearer ') || token.startsWith('bearer ')) {
+            token = token.slice(7).trim();
+        }
+    }
+
+    // Clean & Normalize URL
     if (url) {
+        url = url.replace(/^['"]|['"]$/g, '').trim();
         if (!url.startsWith('http://') && !url.startsWith('https://')) {
             url = `http://${url}`;
         }
@@ -130,6 +168,19 @@ function getHaConfig() {
         if (url.endsWith('/api')) {
             url = url.slice(0, -4).replace(/\/+$/, '');
         }
+
+        // Auto-add default :8123 port for IP addresses or local hostnames if missing
+        try {
+            const parsed = new URL(url);
+            if (!parsed.port && (
+                /^\d+\.\d+\.\d+\.\d+$/.test(parsed.hostname) || 
+                parsed.hostname === 'localhost' || 
+                parsed.hostname.endsWith('.local') ||
+                parsed.hostname === 'homeassistant'
+            )) {
+                url = `${parsed.protocol}//${parsed.hostname}:8123`;
+            }
+        } catch {}
     }
 
     return { url, token };
@@ -139,7 +190,7 @@ function writeEnvFile(filePath, updates) {
     let existingLines = [];
     if (fs.existsSync(filePath)) {
         try {
-            existingLines = fs.readFileSync(filePath, 'utf8').split('\n');
+            existingLines = fs.readFileSync(filePath, 'utf8').replace(/\r/g, '').split('\n');
         } catch {
             existingLines = [];
         }
@@ -151,7 +202,7 @@ function writeEnvFile(filePath, updates) {
         if (!trimmed || trimmed.startsWith('#')) return line;
         const idx = trimmed.indexOf('=');
         if (idx !== -1) {
-            const key = trimmed.slice(0, idx).trim();
+            const key = trimmed.slice(0, idx).trim().replace(/^export\s+/, '');
             if (key in updates) {
                 updatedKeys.add(key);
                 return `${key}=${updates[key]}`;
@@ -281,7 +332,10 @@ app.post('/save-config', (req, res) => {
         process.env.HA_URL = cleanHa;
     }
     if (haToken !== undefined) {
-        const cleanToken = haToken.trim();
+        let cleanToken = haToken.trim();
+        if (cleanToken.startsWith('Bearer ') || cleanToken.startsWith('bearer ')) {
+            cleanToken = cleanToken.slice(7).trim();
+        }
         updates['VITE_HA_TOKEN'] = cleanToken;
         updates['HA_TOKEN'] = cleanToken;
         process.env.VITE_HA_TOKEN = cleanToken;
@@ -353,13 +407,27 @@ async function executeHaRequest(targetUrl, targetToken, subPath, method, body) {
         cleanUrl = `http://${cleanUrl}`;
     }
 
+    // Auto-detect port for IP or localhost
+    try {
+        const parsed = new URL(cleanUrl);
+        if (!parsed.port && (
+            /^\d+\.\d+\.\d+\.\d+$/.test(parsed.hostname) || 
+            parsed.hostname === 'localhost' || 
+            parsed.hostname.endsWith('.local') ||
+            parsed.hostname === 'homeassistant'
+        )) {
+            cleanUrl = `${parsed.protocol}//${parsed.hostname}:8123`;
+        }
+    } catch {}
+
     const cleanSub = subPath ? subPath.replace(/^\/+/, '') : '';
     const fullHaUrl = cleanSub ? `${cleanUrl}/api/${cleanSub}` : `${cleanUrl}/api/`;
+    const cleanToken = targetToken.replace(/^Bearer\s+/i, '').trim();
 
     const fetchOptions = {
         method: method || 'GET',
         headers: {
-            'Authorization': `Bearer ${targetToken}`,
+            'Authorization': `Bearer ${cleanToken}`,
             'Content-Type': 'application/json'
         }
     };
@@ -372,7 +440,7 @@ async function executeHaRequest(targetUrl, targetToken, subPath, method, body) {
         const haResponse = await fetch(fullHaUrl, fetchOptions);
         return { response: haResponse, fullHaUrl, error: null };
     } catch (err) {
-        // Fallback: If target was localhost/127.0.0.1 and inside Docker, try host.docker.internal
+        // Fallback 1: If target was localhost/127.0.0.1 inside Docker, try host.docker.internal
         if (cleanUrl.includes('localhost') || cleanUrl.includes('127.0.0.1')) {
             const dockerHostUrl = cleanUrl.replace('localhost', 'host.docker.internal').replace('127.0.0.1', 'host.docker.internal');
             const fallbackFullUrl = cleanSub ? `${dockerHostUrl}/api/${cleanSub}` : `${dockerHostUrl}/api/`;
@@ -380,9 +448,23 @@ async function executeHaRequest(targetUrl, targetToken, subPath, method, body) {
                 const fallbackResponse = await fetch(fallbackFullUrl, fetchOptions);
                 return { response: fallbackResponse, fullHaUrl: fallbackFullUrl, error: null };
             } catch (fallbackErr) {
-                return { response: null, fullHaUrl, error: err.message };
+                // Ignore fallback error
             }
         }
+
+        // Fallback 2: If port wasn't 8123, try port 8123
+        try {
+            const parsed = new URL(cleanUrl);
+            if (parsed.port !== '8123') {
+                const withPortUrl = `${parsed.protocol}//${parsed.hostname}:8123`;
+                const fallbackFullUrl = cleanSub ? `${withPortUrl}/api/${cleanSub}` : `${withPortUrl}/api/`;
+                const fallbackResponse = await fetch(fallbackFullUrl, fetchOptions);
+                return { response: fallbackResponse, fullHaUrl: fallbackFullUrl, error: null };
+            }
+        } catch (fallbackErr2) {
+            // Ignore fallback error
+        }
+
         return { response: null, fullHaUrl, error: err.message };
     }
 }
