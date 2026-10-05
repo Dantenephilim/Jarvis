@@ -3,17 +3,18 @@ import {
     Home, Lightbulb, Power, Lock, Unlock, Thermometer, 
     ChevronDown, ChevronUp, Sparkles, Shield, RefreshCw,
     Sliders, Tv, Eye, Fan, Activity, Disc, Zap, Flame,
-    AlertCircle, Radio, Play, CheckCircle, Settings, WifiOff
+    AlertCircle, Radio, Play, CheckCircle, Settings, WifiOff,
+    Check, AlertTriangle, ArrowRight, Save
 } from 'lucide-react';
 import { getHaConfig, fetchHaStates, toggleHaEntity, callHaService } from '../services/homeAssistant';
 import './SmartHomeWidget.css';
 
 const DEFAULT_DEMO_ENTITIES = [
-    { entity_id: 'light.living_room', name: 'LUCES SALÓN', domain: 'light', state: 'on', icon: Lightbulb, val: 'ON' },
-    { entity_id: 'light.desk_ambient', name: 'NEÓN DESK', domain: 'light', state: 'on', icon: Lightbulb, val: '100%' },
-    { entity_id: 'switch.master_power', name: 'ENCHUFE PC', domain: 'switch', state: 'on', icon: Zap, val: 'ON' },
+    { entity_id: 'light.living_room', name: 'LUCES SALÓN', domain: 'light', state: 'off', icon: Lightbulb, val: 'OFF' },
+    { entity_id: 'light.desk_ambient', name: 'NEÓN DESK', domain: 'light', state: 'off', icon: Lightbulb, val: '100%' },
+    { entity_id: 'switch.master_power', name: 'ENCHUFE PC', domain: 'switch', state: 'off', icon: Zap, val: 'OFF' },
     { entity_id: 'climate.ac_unit', name: 'CLIMATIZADOR', domain: 'climate', state: 'cool', icon: Thermometer, val: '21°C' },
-    { entity_id: 'lock.front_door', name: 'PUERTA ACCESO', domain: 'lock', state: 'locked', icon: Lock, val: 'LOCKED' },
+    { entity_id: 'lock.front_door', name: 'PUERTA ACCESO', domain: 'lock', state: 'unlocked', icon: Unlock, val: 'UNLOCKED' },
     { entity_id: 'fan.living_fan', name: 'VENTILADOR', domain: 'fan', state: 'off', icon: Fan, val: 'OFF' },
     { entity_id: 'sensor.temp_salon', name: 'TEMP SALÓN', domain: 'sensor', state: '22.4', icon: Activity, val: '22.4 °C' },
     { entity_id: 'scene.movie_night', name: 'MODO CINE', domain: 'scene', state: 'ready', icon: Sparkles, val: 'SCENE' },
@@ -27,7 +28,13 @@ const SmartHomeWidget = ({ onActionSound, onOpenSettings }) => {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [activeTab, setActiveTab] = useState('ALL');
     const [searchQuery, setSearchQuery] = useState('');
-    const [connectionDetail, setConnectionDetail] = useState('');
+    const [errorMessage, setErrorMessage] = useState('');
+
+    // Quick Connect form state inside widget
+    const [haInputUrl, setHaInputUrl] = useState('');
+    const [haInputToken, setHaInputToken] = useState('');
+    const [isConnecting, setIsConnecting] = useState(false);
+    const [showConnectBar, setShowConnectBar] = useState(false);
 
     const loadStates = useCallback(async () => {
         setIsRefreshing(true);
@@ -35,7 +42,8 @@ const SmartHomeWidget = ({ onActionSound, onOpenSettings }) => {
             const rawStates = await fetchHaStates();
             if (rawStates && Array.isArray(rawStates) && rawStates.length > 0) {
                 setIsConnected(true);
-                setConnectionDetail(`${rawStates.length} DISPOSITIVOS`);
+                setErrorMessage('');
+                setShowConnectBar(false);
                 
                 // Parse and format ALL Home Assistant entities
                 const parsed = rawStates
@@ -91,12 +99,10 @@ const SmartHomeWidget = ({ onActionSound, onOpenSettings }) => {
                 }
             } else {
                 setIsConnected(false);
-                setConnectionDetail('SIN CONEXIÓN HA');
             }
         } catch (err) {
             console.warn('[SmartHome] Error loading states:', err);
             setIsConnected(false);
-            setConnectionDetail('ERROR HA');
         } finally {
             setIsRefreshing(false);
         }
@@ -112,15 +118,15 @@ const SmartHomeWidget = ({ onActionSound, onOpenSettings }) => {
                 if (res.ok) {
                     const data = await res.json();
                     if (data.haUrl) {
+                        setHaInputUrl(data.haUrl);
                         localStorage.setItem('ha_url', data.haUrl);
                     }
                     if (data.haToken) {
+                        setHaInputToken(data.haToken);
                         localStorage.setItem('ha_token', data.haToken);
                     }
                 }
-            } catch (e) {
-                // Ignore config fetch error
-            }
+            } catch (e) {}
             if (isMounted) {
                 loadStates();
             }
@@ -133,6 +139,50 @@ const SmartHomeWidget = ({ onActionSound, onOpenSettings }) => {
             clearInterval(interval);
         };
     }, [loadStates]);
+
+    const handleQuickConnect = async () => {
+        if (!haInputUrl && !haInputToken) {
+            setErrorMessage('Ingresa la IP/URL y el Token de Home Assistant');
+            return;
+        }
+
+        setIsConnecting(true);
+        setErrorMessage('Probando conexión con Home Assistant...');
+
+        try {
+            // Test connection via proxy
+            const testRes = await fetch('/api/test-ha', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: haInputUrl, token: haInputToken })
+            });
+
+            const testData = await testRes.json();
+
+            if (testData.success) {
+                // Save to server .env
+                await fetch('/api/save-config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ haUrl: haInputUrl, haToken: haInputToken })
+                });
+
+                localStorage.setItem('ha_url', haInputUrl);
+                localStorage.setItem('ha_token', haInputToken);
+
+                setErrorMessage('');
+                setShowConnectBar(false);
+                setIsConnected(true);
+                await loadStates();
+            } else {
+                setErrorMessage(testData.message || 'No se pudo conectar a Home Assistant.');
+            }
+        } catch (err) {
+            setErrorMessage(`Error de red: ${err.message}`);
+        } finally {
+            setIsConnecting(false);
+        }
+    };
 
     const handleToggle = async (entity) => {
         if (onActionSound) onActionSound();
@@ -215,16 +265,16 @@ const SmartHomeWidget = ({ onActionSound, onOpenSettings }) => {
                     <span className="hud-title">HOME AUTOMATION MATRIX</span>
                     <span 
                         className={`hud-status-badge ${isConnected ? 'online' : 'demo'}`}
-                        title={isConnected ? 'Conectado a Home Assistant' : 'Haz clic para abrir Ajustes (⚙️)'}
+                        title={isConnected ? 'Conectado a Home Assistant' : 'Haz clic para configurar y conectar'}
                         onClick={(e) => {
-                            if (!isConnected && onOpenSettings) {
+                            if (!isConnected) {
                                 e.stopPropagation();
-                                onOpenSettings();
+                                setShowConnectBar(!showConnectBar);
                             }
                         }}
                         style={{ cursor: !isConnected ? 'pointer' : 'default' }}
                     >
-                        {isConnected ? `HA ONLINE (${counts.all})` : 'DEMO MATRIX (CONFIGURA HA)'}
+                        {isConnected ? `HA ONLINE (${counts.all})` : 'DEMO MATRIX (CONECTAR)'}
                     </span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -240,6 +290,44 @@ const SmartHomeWidget = ({ onActionSound, onOpenSettings }) => {
                     </button>
                 </div>
             </div>
+
+            {/* Quick Connect & Diagnostic Panel if Not Connected */}
+            {!isConnected && (!isCollapsed || showConnectBar) && (
+                <div className="ha-connect-banner">
+                    <div className="ha-connect-header">
+                        <AlertTriangle size={13} color="#ffaa00" />
+                        <span>CONFIGURACIÓN DIRECTA DE HOME ASSISTANT</span>
+                    </div>
+                    <div className="ha-connect-inputs">
+                        <input
+                            type="text"
+                            placeholder="IP o URL (ej: http://10.0.0.141:8123)"
+                            value={haInputUrl}
+                            onChange={(e) => setHaInputUrl(e.target.value)}
+                            className="ha-quick-input"
+                        />
+                        <input
+                            type="password"
+                            placeholder="Token Long-Lived de Home Assistant"
+                            value={haInputToken}
+                            onChange={(e) => setHaInputToken(e.target.value)}
+                            className="ha-quick-input token-input"
+                        />
+                        <button 
+                            className="ha-quick-btn" 
+                            onClick={handleQuickConnect}
+                            disabled={isConnecting}
+                        >
+                            {isConnecting ? 'CONECTANDO...' : 'VINCULAR'}
+                        </button>
+                    </div>
+                    {errorMessage && (
+                        <div className="ha-connect-error">
+                            {errorMessage}
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* Expanded Content */}
             {!isCollapsed && (

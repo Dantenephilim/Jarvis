@@ -514,37 +514,37 @@ app.all('/ha/*', async (req, res) => {
 // Health & HA diagnostic endpoint
 app.get('/health', (req, res) => res.json({ ok: true }));
 
-app.get('/ha-status', async (req, res) => {
+app.post('/test-ha', async (req, res) => {
+    const { url, token } = req.body;
     const haConfig = getHaConfig();
-    if (!haConfig.url || !haConfig.token) {
+    const targetUrl = (url || haConfig.url || '').trim();
+    const targetToken = (token || haConfig.token || '').trim();
+
+    if (!targetUrl || !targetToken) {
         return res.json({
-            ok: false,
-            configured: false,
-            message: 'Home Assistant URL or Token not configured in .env',
-            envFile: getEnvFilePath(),
-            haUrl: haConfig.url || '(empty)',
-            tokenPresent: !!haConfig.token
+            success: false,
+            message: 'Falta la URL o el Token de Home Assistant',
+            urlPresent: !!targetUrl,
+            tokenPresent: !!targetToken
         });
     }
 
-    const { response, fullHaUrl, error } = await executeHaRequest(haConfig.url, haConfig.token, '', 'GET');
+    const { response, fullHaUrl, error } = await executeHaRequest(targetUrl, targetToken, 'states', 'GET');
     if (error || !response || !response.ok) {
         return res.json({
-            ok: false,
-            configured: true,
-            message: error || `HTTP ${response?.status}`,
-            targetUrl: fullHaUrl,
-            envFile: getEnvFilePath()
+            success: false,
+            message: error || `Error HTTP ${response?.status}: ${response?.statusText || 'No autorizado o inaccesible'}`,
+            targetUrl: fullHaUrl
         });
     }
 
-    const data = await response.json().catch(() => ({}));
+    const data = await response.json().catch(() => []);
+    const count = Array.isArray(data) ? data.length : 0;
     return res.json({
-        ok: true,
-        configured: true,
-        message: data.message || 'API Running',
-        targetUrl: fullHaUrl,
-        envFile: getEnvFilePath()
+        success: true,
+        message: `¡Conexión Exitosa! ${count} dispositivos encontrados.`,
+        deviceCount: count,
+        targetUrl: fullHaUrl
     });
 });
 

@@ -52,6 +52,7 @@
     padding: 2px 6px;
     border-radius: 2px;
     font-weight: bold;
+    transition: all 0.2s;
 }
 
 .hud-status-badge.online {
@@ -67,6 +68,12 @@
     border: 1px solid rgba(255, 170, 0, 0.4);
 }
 
+.hud-status-badge.demo:hover {
+    background: rgba(255, 170, 0, 0.3);
+    color: #fff;
+    box-shadow: 0 0 8px rgba(255, 170, 0, 0.5);
+}
+
 .hud-toggle-btn {
     background: transparent;
     border: none;
@@ -80,6 +87,86 @@
 
 .hud-toggle-btn:hover {
     color: #fff;
+}
+
+/* Quick Connect Diagnostic Bar */
+.ha-connect-banner {
+    background: rgba(20, 10, 2, 0.95);
+    border-bottom: 1px solid rgba(255, 170, 0, 0.4);
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    animation: fadeIn 0.3s ease;
+}
+
+.ha-connect-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.55rem;
+    font-weight: bold;
+    color: #ffaa00;
+    letter-spacing: 1px;
+}
+
+.ha-connect-inputs {
+    display: flex;
+    gap: 6px;
+}
+
+.ha-quick-input {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(0, 243, 255, 0.3);
+    color: #fff;
+    font-family: inherit;
+    font-size: 0.6rem;
+    padding: 4px 8px;
+    border-radius: 2px;
+    outline: none;
+    letter-spacing: 1px;
+}
+
+.ha-quick-input:focus {
+    border-color: #00f3ff;
+    box-shadow: 0 0 6px rgba(0, 243, 255, 0.4);
+}
+
+.ha-quick-input.token-input {
+    flex: 1.2;
+}
+
+.ha-quick-btn {
+    background: rgba(0, 243, 255, 0.2);
+    border: 1px solid #00f3ff;
+    color: #00f3ff;
+    font-family: inherit;
+    font-size: 0.58rem;
+    font-weight: bold;
+    padding: 4px 10px;
+    border-radius: 2px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+
+.ha-quick-btn:hover:not(:disabled) {
+    background: #00f3ff;
+    color: #000;
+    box-shadow: 0 0 10px #00f3ff;
+}
+
+.ha-quick-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.ha-connect-error {
+    font-size: 0.52rem;
+    color: #ff5555;
+    letter-spacing: 1px;
 }
 
 /* Category Filter Tabs */
